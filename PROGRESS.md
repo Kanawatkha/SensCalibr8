@@ -15,7 +15,7 @@ This file starts empty of phase content. The coding agent is responsible for ana
 2. **Profiles and Setup** — Implement profile lifecycle, physical setup fields, PSA baseline, eDPI/mousepad validation, and non-blocking ergonomic warnings.
 3. **Test Engine Core** — Implement deterministic raw-input capture, precision timing, session/battery orchestration, adaptation finalization, and calibrated target spawning. Blocked until Phase 0 completes.
 4. **Four Test Modes** — Build and verify Close Flick, Far Flick, Tracking, and Micro-Correction against the frozen Phase 0 contracts.
-5. **Protocol and Scoring** — Implement Phase 1-3 execution, counterbalancing, normalization, significance gate, fatigue, outlier handling, Grade, plateau, and Winner selection after Phase 0 freezes every dependent configuration and Phase 1 tie expansion is resolved.
+5. **Protocol and Scoring** — Implement Phase 1-3 execution, counterbalancing, normalization, significance gate, fatigue, outlier handling, Grade, plateau, and Winner selection after Phase 0 freezes every dependent configuration.
 6. **Analysis and Data Export** — Add in-app feedback, Python analysis, HTML reporting, JSON/CSV Data Export, and cross-profile comparisons.
 7. **Integration and Release QA** — Run end-to-end protocol validation, worked examples, validation edge cases, performance/reproducibility checks, and release packaging.
 
@@ -70,6 +70,15 @@ This file starts empty of phase content. The coding agent is responsible for ana
 - Issues encountered: Representative raw traces and the target execution environment are required to determine the remaining measured values.
 - Next step: Design the Phase 0 data-collection procedure and acceptance tests, then collect representative traces before freezing configuration version 1.
 
+### Pre-Development: Phase 1 Tie Expansion Resolved
+
+- Status: Completed
+- Date: 2026-07-14
+- What was done: Applied the project-owner decision for OQ-019. A Phase 1 statistical tie now generates the deduplicated Phase 2 union of both anchors at -10%, 0%, and +10%, after applying the eDPI floor. Added canonical candidate and many-to-one provenance storage so deduplication never loses anchor/offset history.
+- Test results (per Definition of Done in AGENTS.md): Documentation-only work. Verified all 19 OQ records are Resolved with 0 Open; all 31 schema foreign keys include `ON DELETE CASCADE`; the tie-union/deduplication rule appears consistently in research, feature, architecture, and progress contracts; and `git diff --check` passed.
+- Issues encountered: None. Candidate generation explicitly forbids intermediate rounding and deduplicates only after floor application.
+- Next step: Proceed with Phase 0 planning and calibration.
+
 ### Phase [number]: [name]
 
 - Status: Not Started / In Progress / Blocked / Completed
@@ -85,7 +94,7 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 (Record here any point where a specification in FEATURES.md, RESEARCH.md, ARCHITECTURE.md, DESIGN.md, SKILL.md, or RULES.md was unclear or conflicting, per the Error Handling Expectation in AGENTS.md. Do not resolve these by guessing — flag them here for human review.)
 
-Current register status: **18 Resolved, 1 Open**. Phase 0 measured deliverables are implementation prerequisites, not unresolved specification decisions.
+Current register status: **19 Resolved, 0 Open**. Phase 0 measured deliverables are implementation prerequisites, not unresolved specification decisions.
 
 ### OQ-001: Wrist-Strain Warning Threshold
 
@@ -232,8 +241,9 @@ Current register status: **18 Resolved, 1 Open**. Phase 0 measured deliverables 
 
 ### OQ-019: Phase 2 Candidate Set After a Phase 1 Statistical Tie
 
-- Status: Awaiting human decision
+- Status: Resolved — user selected option 1 on 2026-07-14
+- Resolution: Build the deduplicated union of each tied anchor at -10%, 0%, and +10%. Generate without intermediate rounding, apply the eDPI floor before deduplication, and retain every anchor/offset/pre-floor provenance record for each surviving canonical candidate.
 - Specification gap: OQ-005 requires both tied candidates to continue to Phase 2, while the existing Phase 2 rule defines one Phase 1 Winner plus/minus 10%. With two anchors, the candidate-set expansion and deduplication behavior are not defined.
 - Possible options: use the deduplicated union of each anchor and its +/-10% variants (preserves the narrowing rule but may produce up to six values); run two independent three-value Phase 2 branches and compare branch winners later (clean separation but substantially more testing); or test only the two tied values in Phase 2 (least work but suspends the documented +/-10% narrowing rule for ties).
 - Recommendation: Use the deduplicated union of both anchors and their +/-10% variants, with the existing eDPI floor applied and original anchor/offset provenance retained for auditability.
-- Implementation constraint: Phase 0 may proceed, but do not implement Phase 2 candidate generation for a statistical tie until this product behavior is approved.
+- Implementation constraint: Candidate generation must use canonical final eDPI uniqueness per cycle/phase and must never discard provenance when multiple sources collapse to one value.

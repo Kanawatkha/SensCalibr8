@@ -253,10 +253,25 @@ Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Propos
 
 ### 11.2 Phase 2 — Progressive Narrowing
 
-- Candidate range: Phase 1 Winner, Winner +10%, and Winner -10%
+- Normal candidate range: Phase 1 Winner, Winner +10%, and Winner -10%
+- Statistical-tie candidate range: the deduplicated union of each tied Phase 1 anchor at -10%, 0%, and +10%
 - Minimum repetition: 5 complete Protocol Batteries per sensitivity value (5 Database Sessions per mode)
 - Maximum repetition: 10 complete Protocol Batteries per sensitivity value (10 Database Sessions per mode)
 - Stabilization threshold: Performance Score coefficient of variation below 10%
+
+When Phase 1 produces tied anchors `A` and `B`, generate the Phase 2 set as follows:
+
+```
+raw_candidates = {
+    A x 0.90, A x 1.00, A x 1.10,
+    B x 0.90, B x 1.00, B x 1.10
+}
+
+floored_candidate = max(raw_candidate, 160)
+phase_2_candidates = distinct(floored_candidate)
+```
+
+Generate without intermediate rounding. Apply the eDPI floor before deduplication, then deduplicate by the canonical stored eDPI value. The resulting set may contain fewer than six values. Every surviving candidate must retain all source records `(anchor_edpi, offset_percent, pre_floor_edpi, floor_applied)`; when multiple sources collapse to one final eDPI, none of their provenance records may be discarded.
 
 For complete Protocol Batteries at one sensitivity value:
 
@@ -267,7 +282,7 @@ stabilized = CV_percent < 10
 
 The calculation uses sample standard deviation. If the mean is zero or too close to zero for numerically stable division under the approved scoring precision, CV is undefined and the candidate is not stabilized. It must never pass by substituting zero, suppressing the error, or using raw SD units. The scoring-precision tolerance must be frozen in Phase 0 configuration.
 
-Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.3 (Phase 2 — Progressive Narrowing); project-owner approval dated 2026-07-14; [NIST Coefficient of Variation](https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/coefvari.htm).
+Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.3 (Phase 2 — Progressive Narrowing); project-owner approvals dated 2026-07-14 for CV interpretation and statistical-tie candidate expansion; [NIST Coefficient of Variation](https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/coefvari.htm).
 
 ### 11.3 Phase 3 — Final Narrowing
 
@@ -423,6 +438,7 @@ Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolvi
 | Phase 1 sensitivity values | 7 | 11.1 |
 | Phase 1 minimum sample | 30 shots per value per shot-based mode | 11.1 |
 | Phase 2 narrowing range | +/- 10% | 11.2 |
+| Phase 2 tie candidate maximum before deduplication | 6 | 11.2 |
 | Phase 2 minimum repetition | 5 complete batteries per value | 11.2 |
 | Phase 2 maximum repetition | 10 complete batteries per value | 11.2 |
 | Phase 1 significance level | two-sided `alpha = 0.05` | 11.1 |

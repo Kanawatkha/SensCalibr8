@@ -91,7 +91,7 @@ The number of values and minimum sample size are defined in `RESEARCH.md`, Secti
 - **Minimum sample:** at least 30 shots per sensitivity value separately for each shot-based mode. Tracking uses a distinct duration/trial-based contract that must be calibrated in Phase 0; samples are never pooled across modes.
 - **Blind testing:** the numeric sensitivity value must never be displayed to the user during testing, to prevent placebo effects from influencing performance.
 - **Winner selection:** use exploratory Performance Score to identify the top 2, then collect fresh matched confirmatory blocks and run the two-sided paired randomization/permutation test at `alpha = 0.05` defined in `RESEARCH.md`, Section 11.1.
-- **Tie behavior:** if the top-2 difference is not statistically significant, declare a statistical tie and carry both candidates into Phase 2; never force a Phase 1 Winner from the p-value alone.
+- **Tie behavior:** if the top-2 difference is not statistically significant, declare a statistical tie and carry both anchors into the Phase 2 union/deduplication rule; never force a Phase 1 Winner from the p-value alone.
 - **Adaptation Period:** discard the first 50% of shots recorded per tested value before computing any metric (see `RESEARCH.md`, Section 8). This is not a fixed shot count — it scales with the actual number of shots recorded for that value.
 
 ```
@@ -103,7 +103,8 @@ valid_shots = shots[adaptation_cutoff:]  # only these contribute to Performance 
 
 The narrowing range, session limits, and stabilization threshold are defined in `RESEARCH.md`, Section 11.2.
 
-- Test the Phase 1 Winner, Winner+10%, and Winner-10%.
+- With one Phase 1 Winner, test the Winner, Winner+10%, and Winner-10%.
+- With two statistically tied Phase 1 anchors, generate the union of each anchor at -10%, 0%, and +10%, apply the eDPI floor, then deduplicate final eDPI values. Preserve every anchor/offset provenance record when multiple sources collapse to one candidate (see `RESEARCH.md`, Section 11.2).
 - Minimum 5 complete Protocol Batteries per value (equivalent to 5 Database Sessions per mode).
 - Condition for concluding: the coefficient of variation of Performance Score across complete Protocol Batteries must be below 10% before a result is finalized. A zero or numerically near-zero mean is undefined and does not pass stabilization. Up to 10 complete batteries may be run per value if the result has not stabilized within 5.
 

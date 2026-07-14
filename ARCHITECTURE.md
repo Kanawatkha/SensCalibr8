@@ -48,6 +48,7 @@ Any violation of these rules invalidates the scientific rigor mechanisms describ
 |   Unity (C#)          |  write    |    SQLite Database        |
 |  - Aim Test Scenes x4  | -------->  |   - profiles                |
 |  - Raw mouse capture   |           |   - calibration_configs      |
+|                       |           |   - protocol_candidates       |
 |                       |           |   - protocol_batteries        |
 |  - In-app quick chart  | <--------  |   - sessions                  |
 |                       |           |   - shots (raw log)             |
@@ -130,10 +131,33 @@ cycles (
     outcome TEXT
 )
 
+protocol_candidates (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
+    phase INTEGER NOT NULL,
+    edpi REAL NOT NULL,
+    sensitivity_value REAL NOT NULL,
+    generation_rule TEXT NOT NULL,   -- phase1_offsets / single_anchor / tie_union
+    created_date TEXT NOT NULL,
+    UNIQUE (cycle_id, phase, edpi)
+)
+
+protocol_candidate_sources (
+    id INTEGER PRIMARY KEY,
+    candidate_id INTEGER NOT NULL REFERENCES protocol_candidates(id) ON DELETE CASCADE,
+    anchor_edpi REAL NOT NULL,
+    offset_percent REAL NOT NULL,
+    pre_floor_edpi REAL NOT NULL,
+    floor_applied BOOLEAN NOT NULL,
+    UNIQUE (candidate_id, anchor_edpi, offset_percent)
+)
+
 protocol_batteries (
     id INTEGER PRIMARY KEY,
     profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
+    candidate_id INTEGER NOT NULL REFERENCES protocol_candidates(id) ON DELETE CASCADE,
     sensitivity_value REAL NOT NULL,
     phase INTEGER NOT NULL,          -- 1, 2, or 3
     purpose TEXT NOT NULL,           -- exploratory / confirmatory / narrowing / training
@@ -296,6 +320,9 @@ injury_risk_flags (
 - `calibration_configs` is immutable after first use. Phase 0 must populate every field from validated measurements; production sessions cannot reference an incomplete or draft configuration. The fixed signal constants must match `RESEARCH.md`, Section 5, while measured sampling, tolerance, bounds, tier cutpoints, geometry, Tracking, and confirmatory contracts are versioned outputs of Phase 0.
 - Every `session` and `sensitivity_test` references the exact calibration configuration used. Together with `formula_version`, this preserves the meaning of historical raw data and scores.
 - A database `session` is exactly one Test Mode at one sensitivity value. A `protocol_battery` groups exactly four sessions (one per mode) at one sensitivity value. `UNIQUE (battery_id, mode)` prevents duplicate mode runs inside a battery; battery completion requires all four modes.
+- `protocol_candidates` stores the canonical final eDPI after floor application and deduplication. `UNIQUE (cycle_id, phase, edpi)` enforces one candidate per final eDPI in a phase. Candidate generation must not use intermediate rounding.
+- `protocol_candidate_sources` preserves every anchor/offset path that generated a candidate. A deduplicated candidate may therefore have multiple source rows; these rows must never be collapsed or overwritten.
+- Every `protocol_battery` references one canonical candidate. Its `sensitivity_value` and the candidate's value must represent the same final eDPI for the profile DPI.
 - `protocol_batteries.sensitivity_value` is the authoritative tested value for all child sessions. Any redundant sensitivity value recorded in shot or Tracking rows must match the parent battery exactly.
 - Fatigue is evaluated only after session capture and adaptation finalization. `fatigue_score_change_percentage` stores the first-half versus second-half Performance Score change, and `fatigue_flag` is true only for a decline greater than 15%; the flag must not exclude that session from Winner selection.
 - `shots.is_center_hit` supports Center-Hit Percentage as a diagnostic only. The center-zone geometry remains blocked by Phase 0: Signal Calibration and must be versioned with the test configuration.
