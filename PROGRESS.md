@@ -79,6 +79,15 @@ This file starts empty of phase content. The coding agent is responsible for ana
 - Issues encountered: None. Candidate generation explicitly forbids intermediate rounding and deduplicates only after floor application.
 - Next step: Proceed with Phase 0 planning and calibration.
 
+### Pre-Development: Final Documentation Readiness Audit
+
+- Status: Completed
+- Date: 2026-07-14
+- What was done: Audited all 11 Markdown files, including both local primary-source documents, after resolving OQ-001 through OQ-019. Verified specification cross-references, source links, numeric contracts, schema relationships, scope boundaries, and Git synchronization.
+- Test results (per Definition of Done in AGENTS.md): Confirmed 19 Resolved and 0 Open questions; 17 ordered `RESEARCH.md` sections; 23 valid local Markdown links with 0 broken links; all 31 schema foreign keys include `ON DELETE CASCADE`; no active TODO/TBD/Pending Proposal markers exist outside the reusable historical log template; `git diff --check` passed; and local `HEAD` matched `origin/main` at the audited commit before this audit entry.
+- Issues encountered: The decision/specification baseline is complete, but production calibration data is intentionally not complete because Phase 0 has not started. Missing measured outputs are input sampling rate/tolerance and edge handling, normalization and Submovement bounds, Consistency-tier cutpoints, scoring-zero tolerance, target/arena/camera/FOV/frame-rate geometry, Tracking duration/speed/trial contract, center-hit zone, and confirmatory analysis/sample contract.
+- Next step: Treat the Markdown set as ready for Phase 0, not as permission to implement the production Test Engine. Complete and version Phase 0 outputs first.
+
 ### Phase [number]: [name]
 
 - Status: Not Started / In Progress / Blocked / Completed
