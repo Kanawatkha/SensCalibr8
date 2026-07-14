@@ -67,6 +67,8 @@ This score determines the "Winner" of each phase in the testing protocol. Weight
 
 Every stored Performance Score result must be tagged with a `formula_version` value (see `ARCHITECTURE.md`, `sensitivity_tests` table) so that historical results remain comparable even if formula weights are revised in the future.
 
+The operational definition of Consistency, cross-metric normalization/scaling, and the transformation of raw Submovement Count into Submovement Penalty are not defined by the source proposal. These are blocked open questions; see `PROGRESS.md`, OQ-002 through OQ-004. Do not implement the aggregate formula until they are resolved.
+
 Source: Consolidated Research Report; VCT Masters Reykjavik 2022 official tournament statistics (Riot Games).
 
 ---
@@ -157,6 +159,62 @@ Source: Fitts, P. M. (1954). "The Information Capacity of the Human Motor System
 
 ---
 
+## 11. Testing Protocol Constants
+
+The following values define the required execution structure of the three-phase sensitivity testing protocol and the continuous training cycle. They are fixed project protocol values and must be centralized in configuration rather than embedded as magic numbers in test logic.
+
+### 11.1 Phase 1 — PSA Method
+
+- Number of sensitivity values: 7
+- Minimum sample size: 30 shots per sensitivity value
+
+The method for generating and spacing the seven values around the PSA baseline is not defined by the source proposal; see `PROGRESS.md`, OQ-007.
+
+Source: SensCalibr8 Project Proposal V3.0, Section 7 (Testing Protocol).
+
+### 11.2 Phase 2 — Progressive Narrowing
+
+- Candidate range: Phase 1 Winner, Winner +10%, and Winner -10%
+- Minimum sessions: 5 sessions per sensitivity value
+- Maximum sessions: 10 sessions per sensitivity value
+- Stabilization threshold: Performance Score variability below 10%
+
+The 10% threshold is authoritative. The exact statistical definition of "variability below 10%" (raw standard deviation versus coefficient of variation) is not specified by the source proposal and must be resolved before implementation; see `PROGRESS.md`, Open Questions / Ambiguities.
+
+Source: SensCalibr8 Project Proposal V3.0, Section 7 (Testing Protocol).
+
+### 11.3 Phase 3 — Final Narrowing
+
+- Candidate range: Phase 2 Winner, Winner +5%, and Winner -5%
+
+Source: SensCalibr8 Project Proposal V3.0, Section 7 (Testing Protocol).
+
+### 11.4 Continuous Training Cycle
+
+- Training block: 5-10 sessions at the current Best Sensitivity before evaluating Grade progression, fatigue, or plateau behavior
+
+Source: SensCalibr8 Project Proposal V3.0, Section 7 (Testing Protocol).
+
+---
+
+## 12. Outlier Detection Threshold
+
+A shot is flagged as an outlier when its measured result lies beyond 3 standard deviations from the applicable distribution. Outlier shots are treated as accidental observations rather than representative sensitivity performance and must be marked through `shots.is_outlier`.
+
+The metric, sample scope, and handling details used to construct the applicable distribution must remain consistent within an analysis and be documented by the implementation.
+
+Source: SensCalibr8 Project Proposal V3.0, Section 8 (Scientific Rigor).
+
+---
+
+## 13. Micro-Correction Target Offset
+
+Micro-Correction mode must spawn a stationary, small target at an offset of 5-20 pixels from the current crosshair position. The offset range must be randomized within these bounds during the mode.
+
+Source: SensCalibr8 Project Proposal V3.0, Section 7 (Testing Protocol).
+
+---
+
 ## Summary Table of Constants
 
 | Constant | Value | Section |
@@ -178,3 +236,13 @@ Source: Fitts, P. M. (1954). "The Information Capacity of the Human Motor System
 | Reaction Time Tier B | 250-350 ms | 6 |
 | Reaction Time Tier C | 350-500 ms | 6 |
 | Reaction Time Tier D | > 500 ms | 6 |
+| Phase 1 sensitivity values | 7 | 11.1 |
+| Phase 1 minimum sample | 30 shots per value | 11.1 |
+| Phase 2 narrowing range | +/- 10% | 11.2 |
+| Phase 2 minimum sessions | 5 per value | 11.2 |
+| Phase 2 maximum sessions | 10 per value | 11.2 |
+| Phase 2 stabilization threshold | Performance Score variability < 10% | 11.2 |
+| Phase 3 narrowing range | +/- 5% | 11.3 |
+| Continuous training block | 5-10 sessions | 11.4 |
+| Outlier detection threshold | Beyond 3 standard deviations | 12 |
+| Micro-Correction target offset | 5-20 px | 13 |

@@ -13,9 +13,9 @@ This file defines two categories of hard rules: Scientific Rigor and Confound Co
 | Blind Testing | Prevents placebo effect from the user knowing which sensitivity value is currently being tested |
 | Counterbalancing | Prevents order effect (fatigue or warm-up bias accumulating across the test sequence) |
 | Adaptation Period (50% discard) | Prevents cold-start performance at the beginning of testing a new value from contaminating the aggregate result — see `RESEARCH.md`, Section 8 |
-| Outlier Detection | Flags shots beyond 3 standard deviations as accidental, not reflective of the tested sensitivity |
-| Fatigue Detection | Flags within-session performance decline caused by tiredness, distinguishing it from a genuine sensitivity problem |
-| Statistical Significance Test | Prevents declaring a "Winner" between candidate values based on statistical noise alone |
+| Outlier Detection | Flags shots beyond 3 standard deviations as accidental, not reflective of the tested sensitivity — see `RESEARCH.md`, Section 12 |
+| Fatigue Detection | Flags within-session performance decline caused by tiredness, distinguishing it from a genuine sensitivity problem — algorithm pending in `PROGRESS.md`, OQ-006 |
+| Statistical Significance Test | Prevents declaring a "Winner" between candidate values based on statistical noise alone — method pending in `PROGRESS.md`, OQ-005 |
 
 Every one of these mechanisms must be implemented before a Phase (see `FEATURES.md`, Section 3) can be considered functionally complete. None of them are optional add-ons — skipping any one of them invalidates the scientific basis of the entire testing protocol.
 
@@ -24,6 +24,8 @@ Every one of these mechanisms must be implemented before a Phase (see `FEATURES.
 The system must display general, non-diagnostic warning messages when it detects a configuration pattern that may increase ergonomic risk. These are informational flags only — never a medical diagnosis, and never a blocker to continued use.
 
 Warning conditions:
+
+The numeric wrist-strain threshold below is not supported by SensCalibr8 Project Proposal V3.0 and is blocked pending a human decision in `PROGRESS.md`, OQ-001. Do not implement this condition until that question is resolved.
 
 ```
 IF edpi < 200 AND movement_strategy == "wrist":

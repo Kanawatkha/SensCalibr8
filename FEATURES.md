@@ -49,7 +49,7 @@ The testing system consists of four modes. Each mode measures a distinct dimensi
 | 1 | Flick — Close Range | Targets spawn around a central point at close distance, high spawn frequency (Aim Lab style) | Reaction Time, Overflick/Underflick | High sensitivity favors flicky entry players |
 | 2 | Flick — Far Range | Targets spawn far apart in both time and position | Travel Time (isolated from Reaction Time) | Low sensitivity favors methodical/precision aimers |
 | 3 | Tracking | Continuously moving target (3 patterns: linear / curved / variable-speed) | Time-on-Target %, Tracking Deviation (SD) | Grip Tension 60-80% concept |
-| 4 | Micro-Correction | Stationary, small-sized target near current crosshair position (5-20 px offset) | Micro-Adjustment Count, Final Precision Error | PSA Method "natural feel" concept |
+| 4 | Micro-Correction | Stationary, small-sized target near current crosshair position (5-20 px offset; see `RESEARCH.md`, Section 13) | Micro-Adjustment Count, Final Precision Error | PSA Method "natural feel" concept |
 
 ### 2.1 Target Size Variation (Fitts's Law Compliance)
 
@@ -75,10 +75,13 @@ Each test mode produces its own Performance Score for a given sensitivity value.
 
 ### 3.2 Phase 1 — PSA Method (7 Test Values)
 
+The number of values and minimum sample size are defined in `RESEARCH.md`, Section 11.1.
+
 - **Counterbalancing:** randomize the test order of all 7 values to prevent order effects.
 - **Minimum sample:** at least 30 shots per value (statistical validity rule).
 - **Blind testing:** the numeric sensitivity value must never be displayed to the user during testing, to prevent placebo effects from influencing performance.
 - **Winner selection:** select the Winner based on Performance Score, and verify statistical significance between the top 2 candidates before finalizing.
+- **Unresolved test method:** the required statistical test and alpha threshold are blocked pending a decision in `PROGRESS.md`, OQ-005.
 - **Adaptation Period:** discard the first 50% of shots recorded per tested value before computing any metric (see `RESEARCH.md`, Section 8). This is not a fixed shot count — it scales with the actual number of shots recorded for that value.
 
 ```
@@ -88,11 +91,15 @@ valid_shots = shots[adaptation_cutoff:]  # only these contribute to Performance 
 
 ### 3.3 Phase 2 — Progressive Narrowing (+/- 10%)
 
+The narrowing range, session limits, and stabilization threshold are defined in `RESEARCH.md`, Section 11.2. The exact statistical interpretation of the 10% threshold remains an open question recorded in `PROGRESS.md` and must be resolved before implementation.
+
 - Test the Phase 1 Winner, Winner+10%, and Winner-10%.
 - Minimum 5 sessions per value.
 - Condition for concluding: the standard deviation of Performance Score across sessions must fall below 10% before a result is finalized. Up to 10 sessions may be run per value if the result has not stabilized within 5.
 
 ### 3.4 Phase 3 — Final Narrowing (+/- 5%)
+
+The narrowing range is defined in `RESEARCH.md`, Section 11.3.
 
 - Repeat the same test structure as Phase 2, but around the Phase 2 Winner, at a +/- 5% range.
 - Output: a preliminary Best Sensitivity value.
@@ -102,6 +109,10 @@ valid_shots = shots[adaptation_cutoff:]  # only these contribute to Performance 
 Evaluate the preliminary Best Sensitivity using Reaction Time and Consistency to assign a Grade (S/A/B/C/D, see `RESEARCH.md`, Section 6). If the Grade is low, the system must recommend additional practice at that value rather than concluding that the sensitivity value itself is the problem. Do not immediately trigger a re-test of other values on a single low Grade result.
 
 ### 3.6 Continuous Improvement Cycle
+
+The 5-10 session training block is defined in `RESEARCH.md`, Section 11.4.
+
+Fatigue Detection remains blocked until its algorithm and thresholds are resolved in `PROGRESS.md`, OQ-006.
 
 ```
 Cycle N: Train at Best Sensitivity (5-10 sessions)
