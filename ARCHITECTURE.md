@@ -47,8 +47,9 @@ Any violation of these rules invalidates the scientific rigor mechanisms describ
 +----------------------+           +--------------------------+
 |   Unity (C#)          |  write    |    SQLite Database        |
 |  - Aim Test Scenes x4  | -------->  |   - profiles                |
-|  - Raw mouse capture   |           |   - sessions                  |
-|  - In-app quick chart  | <--------  |   - shots (raw log)             |
+|  - Raw mouse capture   |           |   - protocol_batteries        |
+|  - In-app quick chart  | <--------  |   - sessions                  |
+|                       |           |   - shots (raw log)             |
 +----------------------+   read     |   - tracking_data                 |
                                      |   - sensitivity_tests               |
                                      |   - phase_history                     |
@@ -93,12 +94,35 @@ profiles (
    | (ON DELETE CASCADE — applies to all tables below via profile_id)
    v
 
+cycles (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_number INTEGER NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT,
+    outcome TEXT
+)
+
+protocol_batteries (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
+    sensitivity_value REAL NOT NULL,
+    phase INTEGER NOT NULL,          -- 1, 2, or 3
+    started_date TEXT NOT NULL,
+    completed_date TEXT
+)
+
 sessions (
     id INTEGER PRIMARY KEY,
     profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    battery_id INTEGER NOT NULL REFERENCES protocol_batteries(id) ON DELETE CASCADE,
     date TEXT NOT NULL,
     mode TEXT NOT NULL,             -- one of the 4 Test Modes defined in FEATURES.md
-    duration_sec INTEGER NOT NULL
+    duration_sec INTEGER NOT NULL,
+    fatigue_score_change_percentage REAL,
+    fatigue_flag BOOLEAN NOT NULL DEFAULT 0,
+    UNIQUE (battery_id, mode)
 )
 
 shots (
@@ -120,7 +144,8 @@ shots (
     initial_offset_distance REAL NOT NULL,
     micro_adjustment_count INTEGER,
     submovement_count INTEGER,       -- computed per algorithm in RESEARCH.md, Section 5
-    final_precision_error REAL
+    final_precision_error REAL,
+    is_center_hit BOOLEAN             -- diagnostic only; never enters Performance Score directly
 )
 
 tracking_data (
@@ -134,15 +159,6 @@ tracking_data (
     deviation_samples TEXT NOT NULL,
     time_on_target_ms INTEGER NOT NULL,
     time_on_target_percentage REAL NOT NULL
-)
-
-cycles (
-    id INTEGER PRIMARY KEY,
-    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    cycle_number INTEGER NOT NULL,
-    start_date TEXT NOT NULL,
-    end_date TEXT,
-    outcome TEXT
 )
 
 sensitivity_tests (
@@ -182,10 +198,14 @@ injury_risk_flags (
 
 - `grip_style`, `movement_strategy`, `ads_multiplier` are descriptive/reference fields only. They must never be read by any Performance Score calculation or used to bias results (see `CONTEXT.md`, Out of Scope).
 - `current_sensitivity` stores the user's current Valorant sensitivity entered during profile setup so that Step 0 can compare it with the PSA baseline.
+- A database `session` is exactly one Test Mode at one sensitivity value. A `protocol_battery` groups exactly four sessions (one per mode) at one sensitivity value. `UNIQUE (battery_id, mode)` prevents duplicate mode runs inside a battery; battery completion requires all four modes.
+- `protocol_batteries.sensitivity_value` is the authoritative tested value for all child sessions. Any redundant sensitivity value recorded in shot or Tracking rows must match the parent battery exactly.
+- Fatigue is evaluated only after session capture and adaptation finalization. `fatigue_score_change_percentage` stores the first-half versus second-half Performance Score change, and `fatigue_flag` is true only for a decline greater than 15%; the flag must not exclude that session from Winner selection.
+- `shots.is_center_hit` supports Center-Hit Percentage as a diagnostic only. The center-zone geometry remains blocked by Phase 0: Signal Calibration and must be versioned with the test configuration.
 - `crosshair_config` stores only the high-contrast color selected at profile creation. Dot style and dot size are fixed by the application and must not be stored as user-editable settings.
 - `formula_version` on `sensitivity_tests` is mandatory on every insert. Never leave it null.
 - `is_adaptation_shot` must remain null while shots are being captured. After the session ends and the actual shot total for each sensitivity value is known, the Data Layer must compute the cutoff from `RESEARCH.md`, Section 8, and update every shot in a single transaction. Analysis must reject session data containing an unfinalized null adaptation flag.
-- `cycle_id` is mandatory on `sensitivity_tests` and `phase_history`, preserving an explicit relationship between repeated Phase 1-3 runs and their owning continuous-improvement cycle.
+- `cycle_id` is mandatory on `protocol_batteries`, `sensitivity_tests`, and `phase_history`, preserving an explicit relationship between repeated Phase 1-3 runs and their owning continuous-improvement cycle.
 - `tracking_data.sensitivity_value` is mandatory so Tracking results can be grouped and compared by the sensitivity actually tested.
 - `PRAGMA foreign_keys = ON` must be executed and verified separately for every SQLite connection; setting it only during initial schema creation is insufficient.
 - `injury_risk_flags` records are informational only and must never block or alter test execution; they exist purely to surface warnings to the user (see `RULES.md`).

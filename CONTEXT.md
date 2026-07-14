@@ -28,6 +28,7 @@ The following are permanently excluded from this project. Do not implement these
 - A dedicated Scoped/ADS (Aim-Down-Sight) test mode. ADS sensitivity multiplier is a setting the user can already configure directly in Valorant; adding a dedicated test mode for it is unnecessary scope creep. The value may be stored as a reference field only (see `ARCHITECTURE.md`), never tested separately.
 - Role-based weighting of the Performance Score (e.g. adjusting weights based on whether the user plays Duelist, Controller, or Sentinel). No research basis exists for role-specific weight values; this would add complexity without evidentiary support.
 - Any causal claim that a specific grip style or movement strategy (wrist-dominant vs. arm-dominant) determines a "correct" optimal eDPI. These fields are stored as descriptive metadata only (see `ARCHITECTURE.md`) and must never be used to bias or pre-adjust calculated results.
+- Import or Restore from JSON, CSV, or another database. SensCalibr8 provides Data Export only; exported files support portability and analysis but are not promised to be restorable backups.
 
 ## DPI Acquisition Method
 

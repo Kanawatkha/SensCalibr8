@@ -56,7 +56,7 @@ Performance Score =
     (Consistency         x 0.35) +
     (Accuracy%           x 0.30) +
     (Reaction Speed      x 0.20) +
-    (Precision/Headshot% x 0.15) -
+    (Precision Score     x 0.15) -
     (Submovement Penalty x 0.10)
 ```
 
@@ -76,7 +76,29 @@ This score determines the "Winner" of each phase in the testing protocol. Weight
 
 Every stored Performance Score result must be tagged with a `formula_version` value (see `ARCHITECTURE.md`, `sensitivity_tests` table) so that historical results remain comparable even if formula weights are revised in the future.
 
-The operational definition of Consistency, cross-metric normalization/scaling, and the transformation of raw Submovement Count into Submovement Penalty are not defined by the source proposal. These are blocked open questions; see `PROGRESS.md`, OQ-002 through OQ-004. Do not implement the aggregate formula until they are resolved.
+Consistency is the standard deviation of the mode's primary error metric after the adaptation cutoff: Final Precision Error for shot-based modes and Tracking Deviation for Tracking. Lower raw Consistency values are better and must be inverted before normalization. Precision Score is derived from Final Precision Error; lower raw error is better and must likewise be inverted before normalization. Center-Hit Percentage is retained as a diagnostic only and does not enter Performance Score.
+
+Cross-metric normalization/scaling and the transformation of raw Submovement Count into Submovement Penalty remain pending proposal review; see `PROGRESS.md`, OQ-003 and OQ-004. Do not implement the aggregate formula until those questions are approved.
+
+### 4.1 Tracking-Mode Component Mapping
+
+Tracking maps its native metrics into the shared component model:
+
+- Time-on-Target Percentage replaces Accuracy.
+- Inverted Tracking Deviation supplies both the Tracking precision signal and the raw metric used for Tracking Consistency.
+- Reaction Speed is omitted because Tracking has no discrete reaction event comparable to Flick modes.
+- Submovement Penalty is omitted because Tracking has no discrete shot-level corrective action contract.
+
+The removed Reaction Speed weight is redistributed proportionally across the remaining positive weights, preserving their original relative proportions:
+
+```
+Tracking Performance Score =
+    (Consistency               x 0.4375) +
+    (Time-on-Target Percentage x 0.3750) +
+    (Precision Score           x 0.1875)
+```
+
+These weights are derived exactly by dividing the original remaining positive weights (0.35, 0.30, 0.15) by their sum (0.80). They are not independently invented empirical weights. The normalization method for all three inputs remains pending OQ-003 approval.
 
 Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 6.4; VCT Masters Reykjavik 2022 official tournament statistics (Riot Games), as cited by the proposal.
 
@@ -122,9 +144,11 @@ Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Propos
 
 ---
 
-## 7. Headshot % Usage Constraint
+## 7. Precision Weight and Headshot Reference Constraint
 
-Because real tournament data from the highest competitive level shows a practical maximum of approximately 30-33% (see Performance Score section above), Headshot%/Precision must only ever be used as a secondary indicator (weight 0.15 in the Performance Score formula). The user-facing Target Threshold for headshot percentage must never be set above 35%, since anything higher is not supported by empirical competitive data and would mislead the user about a realistic target.
+Because real tournament data from the highest competitive level shows a practical Headshot Percentage maximum of approximately 30-33%, the related Precision component retains the lower positive weight of 0.15. SensCalibr8 does not measure literal Valorant Headshot Percentage in its spherical-target arena. Final Precision Error is the scoring input, renamed Precision Score after inversion and normalization, while Center-Hit Percentage is diagnostic only.
+
+The 35% ceiling applies only if the application displays an external Valorant Headshot Percentage reference. It must not be applied to Center-Hit Percentage because the two measurements are not equivalent.
 
 Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 6.6; VCT Masters Reykjavik 2022 official tournament statistics (Riot Games).
 
@@ -177,11 +201,14 @@ The following values define the required execution structure of the three-phase 
 ### 11.1 Phase 1 — PSA Method
 
 - Number of sensitivity values: 7
-- Minimum sample size: 30 shots per sensitivity value
+- Candidate offsets around the PSA baseline: -20%, -10%, -5%, 0%, +5%, +10%, +20%
+- Candidate eDPI multipliers: 0.80, 0.90, 0.95, 1.00, 1.05, 1.10, 1.20
+- Minimum sample size: 30 shots per sensitivity value for each shot-based mode
+- Tracking uses a separate duration/trial-based sample contract to be calibrated and locked in Phase 0: Signal Calibration
 
-The method for generating and spacing the seven values around the PSA baseline is not defined by the source proposal; see `PROGRESS.md`, OQ-007.
+The offset set is a project-owner decision that combines the seven-value Proposal V3.0 requirement with the +/-20%, +/-10%, and +/-5% progression documented by the 9-Week Rule in Section 15.
 
-Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.2 (Phase 1 — PSA Method).
+Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.2 (seven-value Phase 1 and minimum 30 shots); [Consolidated Research Report](reference/Valorant_Research_Report.md), Section 2, "The 9-Week Rule" (+/-20%, +/-10%, and +/-5% progression); project-owner decision dated 2026-07-14 for the exact seven-value mapping and per-mode sample scope.
 
 ### 11.2 Phase 2 — Progressive Narrowing
 
@@ -240,7 +267,7 @@ Source: [Consolidated Research Report](reference/Valorant_Research_Report.md), S
 
 The source research describes an iterative refinement sequence that compares the current baseline against variants 20% higher and 20% lower, then repeats the process at 10% and 5% variances. Warm-up and aim-training routines must remain identical during the comparison period, and performance is evaluated weekly.
 
-This source supports the progressive use of +/-10% and +/-5% in the operational protocol. It does not define how the seven Phase 1 PSA values are generated or spaced; that issue remains open in `PROGRESS.md`, OQ-007. The source's initial +/-20% comparison must not be silently substituted for the Proposal V3.0 seven-value Phase 1 protocol.
+This source supports the progressive use of +/-20%, +/-10%, and +/-5%. By project-owner decision dated 2026-07-14, those symmetric offsets plus the PSA baseline define the exact seven Phase 1 candidates documented in Section 11.1.
 
 Source: [Consolidated Research Report](reference/Valorant_Research_Report.md), Section 2 (Mouse Dynamics and Sensitivity Calibration), subsection "The 9-Week Rule (Iterative Refinement)."
 
@@ -259,6 +286,55 @@ Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Propos
 
 ---
 
+## 17. Approved Operational Definitions
+
+The following definitions are project-owner engineering and product decisions dated 2026-07-14. They define project behavior where the two source reports did not prescribe a complete implementation.
+
+### 17.1 Session and Protocol Battery
+
+- Database Session: exactly one Test Mode at exactly one sensitivity value.
+- Protocol Battery: the complete set of all four Test Modes at one sensitivity value.
+- Every Database Session belongs to one Protocol Battery through `battery_id`.
+
+### 17.2 Fatigue Detection
+
+After applying the adaptation cutoff, split the remaining valid observations in one Database Session into chronological first and second halves. Compute Performance Score separately for both halves.
+
+```
+fatigue_drop_percentage =
+    ((first_half_score - second_half_score) / first_half_score) x 100
+
+IF fatigue_drop_percentage > 15:
+    FLAG session_fatigue
+```
+
+A fatigue flag is informational. It must not exclude the session from Winner selection or alter its stored Performance Score.
+
+### 17.3 Grade Combination
+
+Assign separate Reaction Time and Consistency tiers, then use the worse of the two as the final Grade. The method for deriving a Consistency tier from the normalized Consistency Score remains dependent on the approved normalization design in OQ-003.
+
+### 17.4 Plateau Detection
+
+A plateau occurs only when both conditions are true:
+
+- Final Grade is unchanged for 3 consecutive cycles.
+- The absolute Performance Score change between the first and third cycle is less than 5% relative to the first cycle's score.
+
+When a plateau is detected, automatically begin a new Phase 1-3 recalibration using the current value as the new baseline.
+
+### 17.5 Target Geometry Policy
+
+Tests use fixed world geometry with locked camera FOV, camera configuration, and Target Frame Rate. Exact dimensions, speeds, durations, FOV, and frame-rate values must be established, validated, versioned, and added to this file during Phase 0: Signal Calibration before production Test Engine implementation.
+
+### 17.6 Phase 1 Sample Contract
+
+The 30-shot minimum applies separately to each shot-based Test Mode at each sensitivity value. Shots are not pooled across modes. Tracking uses a separate duration/trial-based contract established during Phase 0: Signal Calibration.
+
+Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolving OQ-002, OQ-006, OQ-009, OQ-013, OQ-014, OQ-015, and OQ-017. These decisions remain implementation-blocked until all Pending Proposal Review questions are approved.
+
+---
+
 ## Summary Table of Constants
 
 | Constant | Value | Section |
@@ -268,7 +344,7 @@ Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Propos
 | Performance Score weight — Consistency | 0.35 | 4 |
 | Performance Score weight — Accuracy% | 0.30 | 4 |
 | Performance Score weight — Reaction Speed | 0.20 | 4 |
-| Performance Score weight — Precision/Headshot% | 0.15 | 4 |
+| Performance Score weight — Precision Score | 0.15 | 4 |
 | Performance Score weight — Submovement Penalty | 0.10 (subtracted) | 4 |
 | Submovement start threshold | ~8 deg/s | 5 |
 | Submovement end threshold | ~4 deg/s | 5 |
@@ -281,7 +357,7 @@ Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Propos
 | Reaction Time Tier C | `350 <= t <= 500 ms` | 6 |
 | Reaction Time Tier D | `t > 500 ms` | 6 |
 | Phase 1 sensitivity values | 7 | 11.1 |
-| Phase 1 minimum sample | 30 shots per value | 11.1 |
+| Phase 1 minimum sample | 30 shots per value per shot-based mode | 11.1 |
 | Phase 2 narrowing range | +/- 10% | 11.2 |
 | Phase 2 minimum sessions | 5 per value | 11.2 |
 | Phase 2 maximum sessions | 10 per value | 11.2 |
@@ -296,3 +372,10 @@ Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Propos
 | 9-Week Rule later comparisons | +/- 10%, then +/- 5% | 15 |
 | Informational wrist-warning threshold | eDPI < 200 with Wrist strategy | 16 |
 | Submovement Penalty output range | 0.0-1.0 | 4 |
+| Phase 1 candidate offsets | 0%, +/-5%, +/-10%, +/-20% | 11.1 |
+| Tracking weight — Consistency | 0.4375 | 4.1 |
+| Tracking weight — Time-on-Target | 0.3750 | 4.1 |
+| Tracking weight — Precision Score | 0.1875 | 4.1 |
+| Fatigue flag threshold | Performance Score drop > 15% | 17.2 |
+| Plateau Grade window | 3 consecutive cycles | 17.4 |
+| Plateau Performance Score change | < 5% | 17.4 |

@@ -64,6 +64,12 @@ The crosshair uses an application-fixed dot style and dot size. During profile c
 
 Each test mode produces its own Performance Score for a given sensitivity value. These per-mode scores must be stored individually (see `ARCHITECTURE.md`, `sensitivity_tests.performance_score_by_mode`) before being aggregated into `avg_performance_score`. Never discard the per-mode breakdown — it is required for the Visualization Layer (Section 4 below) and for diagnosing which mode drove a Winner decision.
 
+For shot-based modes, Final Precision Error is inverted and normalized into the scoring component named **Precision Score**. Center-Hit Percentage is retained only as a diagnostic. For Tracking, Time-on-Target replaces Accuracy and inverted Tracking Deviation supplies Precision Score; Reaction Speed and Submovement Penalty are omitted, with the remaining positive weights redistributed proportionally as defined in `RESEARCH.md`, Section 4.1.
+
+### 2.4 Reproducible Test Geometry
+
+All production tests use fixed world geometry with locked FOV, camera configuration, and Target Frame Rate. Concrete target sizes, distances, spawn frequency, Tracking speed/duration, arena dimensions, center-hit zone, and frame-rate value must be measured and versioned during Phase 0: Signal Calibration before the Test Engine is implemented.
+
 ---
 
 ## 3. Testing Protocol (Execution Flow)
@@ -78,8 +84,9 @@ Each test mode produces its own Performance Score for a given sensitivity value.
 
 The number of values and minimum sample size are defined in `RESEARCH.md`, Section 11.1.
 
+- **Candidate values:** PSA baseline at 0%, plus symmetric +/-5%, +/-10%, and +/-20% offsets (seven values total).
 - **Counterbalancing:** randomize the test order of all 7 values to prevent order effects.
-- **Minimum sample:** at least 30 shots per value (statistical validity rule).
+- **Minimum sample:** at least 30 shots per sensitivity value separately for each shot-based mode. Tracking uses a distinct duration/trial-based contract that must be calibrated in Phase 0; samples are never pooled across modes.
 - **Blind testing:** the numeric sensitivity value must never be displayed to the user during testing, to prevent placebo effects from influencing performance.
 - **Winner selection:** select the Winner based on Performance Score, and verify statistical significance between the top 2 candidates before finalizing.
 - **Unresolved test method:** the required statistical test and alpha threshold are blocked pending a decision in `PROGRESS.md`, OQ-005.
@@ -105,20 +112,25 @@ The narrowing range is defined in `RESEARCH.md`, Section 11.3.
 - Repeat the same test structure as Phase 2, but around the Phase 2 Winner, at a +/- 5% range.
 - Output: a preliminary Best Sensitivity value.
 
+### 3.4.1 Session and Protocol Battery Contract
+
+A database Session is one Test Mode at one sensitivity value. A Protocol Battery is the complete set of four mode-specific Sessions at one sensitivity value and is grouped by `battery_id` (see `ARCHITECTURE.md`). Protocol repetition and Phase 2/3 completion counts must use complete batteries; an incomplete battery must not count toward the 5-10 requirement.
+
 ### 3.5 Step 4 — Performance Gate Check
 
-Evaluate the preliminary Best Sensitivity using Reaction Time and Consistency to assign a Grade (S/A/B/C/D, see `RESEARCH.md`, Section 6). If the Grade is low, the system must recommend additional practice at that value rather than concluding that the sensitivity value itself is the problem. Do not immediately trigger a re-test of other values on a single low Grade result.
+Evaluate the preliminary Best Sensitivity using Reaction Time and Consistency to assign separate tiers, then use the worse tier as the final Grade (S/A/B/C/D; see `RESEARCH.md`, Sections 6 and 17.3). If the Grade is low, the system must recommend additional practice at that value rather than concluding that the sensitivity value itself is the problem. Do not immediately trigger a re-test of other values on a single low Grade result.
 
 ### 3.6 Continuous Improvement Cycle
 
 The 5-10 session training block is defined in `RESEARCH.md`, Section 11.4.
 
-Fatigue Detection remains blocked until its algorithm and thresholds are resolved in `PROGRESS.md`, OQ-006.
+Fatigue Detection compares the Performance Score of the chronological first and second halves of valid post-adaptation observations in the same session. A second-half decline greater than 15% sets an informational fatigue flag, but never excludes the session from Winner selection (see `RESEARCH.md`, Section 17.2).
 
 ```
 Cycle N: Train at Best Sensitivity (5-10 sessions)
    -> Monitor Grade progression + Fatigue Detection
-   -> If Grade plateaus  -> Re-run Phase 1-3 (new baseline = current value)
+   -> If Grade is unchanged for 3 cycles AND Score changes <5%
+      -> Immediately re-run Phase 1-3 (new baseline = current value)
    -> If Grade improves   -> Continue training at current value
    -> Proceed to Cycle N+1
 ```

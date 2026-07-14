@@ -14,7 +14,7 @@ This file defines two categories of hard rules: Scientific Rigor and Confound Co
 | Counterbalancing | Prevents order effect (fatigue or warm-up bias accumulating across the test sequence) |
 | Adaptation Period (50% discard) | Prevents cold-start performance at the beginning of testing a new value from contaminating the aggregate result — see `RESEARCH.md`, Section 8 |
 | Outlier Detection | Flags shots beyond 3 standard deviations as accidental, not reflective of the tested sensitivity — see `RESEARCH.md`, Section 12 |
-| Fatigue Detection | Flags within-session performance decline caused by tiredness, distinguishing it from a genuine sensitivity problem — algorithm pending in `PROGRESS.md`, OQ-006 |
+| Fatigue Detection | Compares first-half versus second-half Performance Score after adaptation; a decline greater than 15% is flagged but never excluded from Winner selection (see `RESEARCH.md`, Section 17.2) |
 | Statistical Significance Test | Prevents declaring a "Winner" between candidate values based on statistical noise alone — method pending in `PROGRESS.md`, OQ-005 |
 
 Every one of these mechanisms must be implemented before a Phase (see `FEATURES.md`, Section 3) can be considered functionally complete. None of them are optional add-ons — skipping any one of them invalidates the scientific basis of the entire testing protocol.
@@ -46,11 +46,11 @@ Every triggered flag must be recorded in `injury_risk_flags` (see `ARCHITECTURE.
 - The system must prevent deletion of a profile that is currently active/selected. The user must exit that profile before it can be deleted (see `FEATURES.md`, Section 1.3).
 - Mousepad width and height must be positive numeric values greater than zero; reject non-positive input before allowing Mousepad Constraint Validation to run.
 
-## 4. Data Integrity & Backup Strategy
+## 4. Data Integrity & Data Export Strategy
 
-### 4.1 Export / Backup
+### 4.1 Data Export
 
-The system supports exporting data as JSON and CSV, separated by profile, to protect against data loss in the event that the SQLite file becomes corrupted.
+The system supports profile-separated JSON and CSV Data Export for portability and external analysis. Import/Restore is explicitly Out of Scope (see `CONTEXT.md`), so exports must not be presented as restorable backups or as a guaranteed recovery mechanism for a corrupted SQLite file.
 
 ### 4.2 Formula Versioning
 
