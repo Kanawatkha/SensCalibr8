@@ -21,6 +21,187 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 ---
 
+## Detailed Execution Plan
+
+The project is divided into eight sequential phases and execution rounds. A round is the normal unit the project owner authorizes in one instruction. Complete, verify, document, and commit one round before moving to the next; never silently continue into another round or phase.
+
+### Execution-Round Protocol
+
+Every round follows this gate sequence:
+
+1. Re-read `AGENTS.md`, `CONTEXT.md`, and `PROGRESS.md`, then the task-relevant sections of the remaining authoritative Markdown files.
+2. Confirm that the round belongs to the active phase and that all entry dependencies are complete. Record a conflict or missing decision in Open Questions instead of guessing.
+3. Define the smallest testable increment and identify every `RESEARCH.md` constant/configuration it consumes. No code may depend on an unfrozen Phase 0 value.
+4. Implement only that round's scope. Preserve the Test Logic, Data, UI, Service, and Python Analysis boundaries from `SKILL.md`.
+5. Run unit, integration, reproducibility, data-integrity, and/or visual checks appropriate to the change. Calculation rounds must include the applicable worked examples and validation edge cases from `AGENTS.md` and `RULES.md`.
+6. Update the phase status in this file with the outcome, exact test results, issues, and next authorized round.
+7. Create one logical local Git commit. Push, tag, publish, or start the next round only when the project owner explicitly requests it.
+
+### Phase Dependency Chain
+
+`Phase 0 -> Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5 -> Phase 6 -> Phase 7`
+
+- Phase 0 may use a minimal calibration-only harness, but no production target spawning, scoring, Winner selection, or production Test Engine behavior may be implemented before its configuration is frozen.
+- Later phases may prepare interfaces for future consumers, but may not bypass the exit gate of an earlier phase.
+- A phase is complete only when its exit gate and the project-wide Definition of Done in `AGENTS.md` both pass.
+
+### Phase 0 — Signal Calibration
+
+**Objective:** Replace every intentionally unfrozen measured value with validated, immutable, versioned configuration before production Test Engine or scoring work begins.
+
+**Entry gate:** The specification audit is complete; all 19 Open Questions are resolved; the target Unity/runtime environment and representative input hardware are available for measurement.
+
+**Execution rounds:**
+
+- **P0-R1 — Calibration protocol and acceptance matrix:** Inventory the target runtime, display, input device, DPI, polling behavior, resolution, and operating conditions; define the trace naming/version format, controlled test procedures, repeated-run requirements, invalid-trace rules, and evidence required to accept or reject each measured configuration field. This round defines procedures, not unsupported production constants.
+- **P0-R2 — Minimal calibration harness:** Create only the instrumentation needed to collect timestamped raw deltas, camera/angular traces, frame timing, target events, and environment metadata. Provide an append-only calibration export and integrity checks. Keep the harness isolated from the future production scoring and protocol engine.
+- **P0-R3 — Input and timing calibration:** Collect representative traces and validate event-rate policy, interval variability, uniform-resampling behavior, timestamp precision, dropped/duplicate event handling, timing tolerance, trace-length requirements, and forward/backward filter edge handling. Confirm that raw samples are never overwritten by derived data.
+- **P0-R4 — Arena and visual-geometry calibration:** Validate and select the fixed arena dimensions, camera configuration, FOV, Target Frame Rate, target Small/Medium/Large world dimensions, close/far placement, spawn constraints, visual-angle/Fitts-condition coverage, fixed crosshair size, and Center-Hit zone. Verify identical geometry across repeated runs and supported display conditions.
+- **P0-R5 — Mode and signal-response calibration:** Validate the approved fifth-order 7 Hz Butterworth SOS, zero-phase offline filtering, 8/4 degrees-per-second event thresholds, and 80 ms refractory behavior against representative traces. Calibrate Tracking patterns, target speeds, duration/trial contract, spawn timing, Micro-Correction behavior, and mode-specific trace acceptance rules without changing source-authorized constants.
+- **P0-R6 — Scoring and statistical calibration:** Derive fixed mode/metric min-max bounds, Submovement lower/upper bounds, normalized Consistency tier cutpoints, numerically-near-zero score tolerance, and the fresh matched confirmatory block/sample and confidence-interval procedure. Validate clamping, lower-is-better inversion, insufficient-data behavior, and reproducibility without deriving bounds dynamically from a production comparison set.
+- **P0-R7 — Freeze Calibration Configuration v1:** Consolidate accepted measurements into one immutable complete configuration; assign signal-pipeline, normalization, geometry, protocol, and calibration versions; update `RESEARCH.md` with measured values, method, evidence, and source/artifact references; add regression fixtures; and reject any incomplete/draft configuration for production use.
+
+**Primary outputs:** Calibration procedure, raw trace corpus, calibration-only harness, analysis evidence, complete immutable `calibration_config_v1`, regression fixtures, and updated research/configuration documentation.
+
+**Exit gate:** Every required `calibration_configs` field is populated and validated; repeated runs reproduce accepted results within the frozen tolerances; no Phase 0-dependent constant remains undefined; configuration and evidence are versioned; all Phase 0 tests pass and results are recorded here. Only then may Phase 1 begin and the production Test Engine dependency be considered unblocked.
+
+### Phase 1 — Foundation and Data Layer
+
+**Objective:** Establish the production Unity/C#/SQLite/Python foundation and a tested persistence boundary before product features are built.
+
+**Entry gate:** Phase 0 exit gate passed and Calibration Configuration v1 is frozen.
+
+**Execution rounds:**
+
+- **P1-R1 — Production project foundation:** Pin the supported Unity/runtime and Python environments; establish repository folders and assembly/package boundaries for Test Logic, Data, Service, UI, and Analysis; configure the Unity Input System; add repeatable build/test commands; and document local setup. Do not duplicate calibration-harness responsibilities in production classes.
+- **P1-R2 — Central configuration and domain contracts:** Implement typed immutable loaders for every `RESEARCH.md` constant and versioned Phase 0 field, domain value objects/enums, validation of complete configurations, and C#/Python configuration parity. Ensure calculation classes remain plain C# and independent of `MonoBehaviour`.
+- **P1-R3 — SQLite schema and migrations:** Implement the complete `ARCHITECTURE.md` schema, indexes/uniqueness checks, all `NOT NULL` constraints, all `ON DELETE CASCADE` relationships, migration/version metadata, and verified `PRAGMA foreign_keys = ON` on every connection.
+- **P1-R4 — Repositories and transaction boundary:** Implement centralized connection handling, repositories, mapping, transactional session preservation, database error logging/user surfacing, and recovery behavior. No UI, Test Logic, Service, or Python class may issue raw SQL.
+- **P1-R5 — Data-integrity verification:** Test schema creation and migration, foreign-key enforcement per connection, cascade behavior, required-field rejection, candidate/source provenance, one-mode-per-battery uniqueness, configuration immutability, formula/calibration version persistence, rollback behavior, and controlled database failures.
+
+**Primary outputs:** Buildable project shell, environment manifest, centralized versioned configuration, schema/migrations, repository layer, transaction/error policy, and automated data-layer test suite.
+
+**Exit gate:** A clean workspace can build and create/migrate the database; every schema contract and failure path is covered by passing automated tests; layers access data only through the Data Layer; Phase 0 configuration cannot be incomplete or mutated after use.
+
+### Phase 2 — Profiles and Physical Setup
+
+**Objective:** Deliver a complete profile-scoped setup workflow and all foundational sensitivity calculations/validations without starting the aim-test engine.
+
+**Entry gate:** Phase 1 persistence/configuration APIs are stable and tested.
+
+**Execution rounds:**
+
+- **P2-R1 — Calculation and validation services:** Implement the manual-DPI and Physical Ruler Test paths, PSA baseline, eDPI, starting sensitivity, current-versus-baseline comparison, eDPI floor adjustment, cm/360, mousepad constraint, and input-validation services. Verify the required worked example where DPI 1600 yields Starting Sensitivity 0.175 exactly, the physical-counts/distance formula, and all relevant invalid/edge inputs.
+- **P2-R2 — Profile lifecycle services:** Implement create/list/select/update/delete behavior, unique local names, profile isolation, active-profile state, current sensitivity, physical setup fields, last-active date, and deletion cascade orchestration.
+- **P2-R3 — Slot Selection and Setup UI:** Build the simple table/grid screens from `DESIGN.md`; expose all required fields; show crosshair style/size as fixed; allow only supported high-contrast color selection; include the Physical Ruler Test fallback entry point; keep calculations out of UI classes.
+- **P2-R4 — Lifecycle guards and persistence:** Enforce the active-profile deletion prohibition, duplicate-name rejection, confirmation flows for allowed deletion, setup resume/edit behavior, lifetime locking of the selected crosshair color, and profile-scoped data retrieval without cross-profile leakage.
+- **P2-R5 — Ergonomic warnings and Dashboard shell:** Evaluate and persist non-diagnostic wrist/mousepad warning flags, display non-blocking banner rows, and build the Dashboard shell for Best Sensitivity, Grade, activity summary, and future mode launch points. Warnings must never alter results or block execution.
+- **P2-R6 — Profile/setup acceptance:** Run end-to-end profile creation, selection, edit, restart persistence, multiple-profile isolation, validation edge cases, active/inactive deletion, cascade, formula examples, and warning acknowledgement tests.
+
+**Primary outputs:** Profile and setup workflow, calculation/validation services, Slot Selection, Setup, Dashboard shell, ergonomic warning persistence, and profile acceptance tests.
+
+**Exit gate:** Every setup field persists correctly; all `RULES.md` input-validation cases pass; profiles are isolated; the exact PSA worked example passes; warnings remain informational; active-profile deletion is impossible and inactive deletion cascades correctly.
+
+### Phase 3 — Production Test Engine Core
+
+**Objective:** Build the deterministic, mode-independent runtime that all four tests share, using only frozen Phase 0 configuration.
+
+**Entry gate:** Phases 0-2 complete; production configuration, data access, and profile context are stable.
+
+**Execution rounds:**
+
+- **P3-R1 — Engine contracts and state machine:** Define `ITestMode` and shared lifecycle contracts for prepare/start/capture/end/report/cancel/recover; implement explicit cycle, protocol candidate, battery, session, and session-state models; reject invalid transitions and incomplete configuration.
+- **P3-R2 — Deterministic input and timing:** Integrate Unity Input System raw mouse deltas, the approved high-resolution timer, frozen frame policy, timestamp ordering, angular conversion, and raw sample persistence. Do not use `Time.time`, legacy `Input.GetAxis`, or frame-count-derived reaction timing.
+- **P3-R3 — Calibrated arena runtime:** Build the enclosed checkerboard arena, fixed camera/FOV/frame policy, cyan spherical target service, application-fixed dot crosshair with profile color, minimal hand/weapon/shoot animation, and unobtrusive HUD exactly within `DESIGN.md` scope.
+- **P3-R4 — Target sequencing and confound control:** Implement deterministic seedable condition sequences, size/distance randomization within the frozen matrix, blind sensitivity labels, counterbalanced candidate/mode order, spawn safety constraints, and auditable sequence metadata.
+- **P3-R5 — Session/battery persistence lifecycle:** Persist one mode and sensitivity per session, exactly four distinct modes per complete battery, candidate provenance, pause/cancel/failure disposition, transactional completion, and post-session adaptation finalization in one transaction while active shots remain null.
+- **P3-R6 — Core-engine verification:** Test timer/input accuracy against calibration fixtures, deterministic replay/sequence generation, frame and geometry invariance, invalid state transitions, incomplete battery behavior, interrupted-write recovery, raw-data preservation, and rejection of unfinalized adaptation data.
+
+**Primary outputs:** Shared Test Engine state machine, deterministic capture/timing, calibrated arena, confound-control sequencer, session/battery persistence, and engine-core regression suite.
+
+**Exit gate:** The engine can run and persist a deterministic synthetic/stub mode without scoring; calibration fixtures reproduce; raw data survives failures; adaptation finalization and battery integrity pass; no mode-specific duplicated plumbing exists.
+
+### Phase 4 — Four Test Modes
+
+**Objective:** Implement and validate each required mode against the shared engine and frozen calibration contracts.
+
+**Entry gate:** Phase 3 shared engine passes synthetic-mode and recovery tests.
+
+**Execution rounds:**
+
+- **P4-R1 — Close Flick:** Implement close-distance/high-frequency target behavior, calibrated size-and-distance randomization, spawn-to-shot Reaction Time, hit/miss, hit position, signed Overflick/Underflick, Final Precision Error, Center-Hit diagnostic, movement/stationary state, raw trace link, and mode completion contract.
+- **P4-R2 — Far Flick:** Implement far-separated target timing/position conditions, calibrated size-and-distance randomization, and Travel Time isolated from Reaction Time. Preserve hit/miss, signed error, precision, movement/stationary state, Center-Hit, and raw trace data while limiting differences from Close Flick to documented/calibrated mode behavior.
+- **P4-R3 — Tracking:** Implement linear, curved, and variable-speed patterns; calibrated speed/duration/trial contract; Time-on-Target; deviation trace/aggregate; pattern metadata; raw mouse data; and completion rules suitable for post-adaptation trial/window analysis.
+- **P4-R4 — Micro-Correction:** Implement randomized stationary offsets of 5-20 pixels, initial offset, micro-adjustment/final precision metrics, Center-Hit diagnostic, and the approved angular Submovement pipeline while preserving raw traces.
+- **P4-R5 — Cross-mode battery integration:** Connect all modes to one battery workflow, prevent duplicate modes, preserve blind labels and counterbalanced order, validate mode-specific sample completion, and keep score-independent raw/derived data clearly separated.
+- **P4-R6 — Mode acceptance and reproducibility:** Verify target geometry/sequence, metrics, timing, persistence, cancellation/restart, repeatability, HUD non-interference, fixed crosshair, and conformity to every mode requirement in `FEATURES.md` and `DESIGN.md`.
+
+**Primary outputs:** Four production test modes, their derived metric services, battery integration, and per-mode acceptance fixtures/tests.
+
+**Exit gate:** Each mode independently and collectively meets its frozen completion contract; repeated controlled inputs reproduce metrics; all raw and derived records map to the correct profile/cycle/candidate/battery/session; no scoring or protocol rule is hidden inside a mode class.
+
+### Phase 5 — Protocol, Scoring, and Scientific Rigor
+
+**Objective:** Turn validated mode data into the complete Phase 1-3 calibration protocol, auditable scores, grades, and continuous recalibration behavior.
+
+**Entry gate:** All four modes and their metric contracts are complete and stable.
+
+**Execution rounds:**
+
+- **P5-R1 — Metric normalization and score services:** Implement fixed versioned min-max utility scaling, direction inversion, clamping, Submovement penalty mapping, shot-mode Performance Score, Tracking-specific redistributed weights, per-mode aggregation, and formula-version persistence. Test every boundary and worked example available in `RESEARCH.md`.
+- **P5-R2 — Phase 1 exploratory protocol:** Generate baseline candidates at 0%, +/-5%, +/-10%, and +/-20% without intermediate rounding; apply and notify the eDPI floor; retain source provenance; blind and counterbalance testing; require 30 valid shots per value separately for each shot-based mode and the frozen Tracking contract.
+- **P5-R3 — Confirmatory significance gate:** Select exploratory top candidates, collect fresh non-reused matched blocks, run the two-sided paired randomization/permutation test at alpha 0.05, calculate effect estimate and 95% confidence interval, persist every pair/version, and produce either a Winner or statistical tie.
+- **P5-R4 — Phase 2 progressive narrowing:** Generate Winner +/-10%, or the floored/deduplicated union of tied anchors at -10%/0%/+10% with all provenance; count only complete batteries; evaluate stabilization from 5 through 10 batteries using sample-SD CV below 10%; treat near-zero means as undefined/non-passing.
+- **P5-R5 — Phase 3 final narrowing:** Generate the Phase 2 Winner and +/-5% candidates, execute the same blind/counterbalanced scientific controls, and persist the final Best Sensitivity with complete cycle/phase/config/formula lineage.
+- **P5-R6 — Adaptation, outlier, fatigue, and Grade:** Enforce 50% post-session adaptation labeling; one-pass metric-specific post-adaptation 3-SD flagging in homogeneous scopes; inclusive authoritative score plus excluded sensitivity analysis; separately documented data-quality exclusions; first/second-half fatigue flag over 15% without exclusion; Reaction and Consistency tiers with the worse tier as final Grade.
+- **P5-R7 — Continuous cycle and plateau:** Execute 5-10 current-Best sessions, preserve cycle history, detect plateau only when Grade is unchanged for three cycles and relative score change is below 5%, and automatically initialize a new Phase 1-3 cycle from current sensitivity without overwriting history.
+- **P5-R8 — Full protocol regression:** Exercise normal Winner, statistical tie, floor collision/deduplication, incomplete batteries, undefined CV, stabilization minimum/maximum, outlier/data-quality split, fatigue, Grade boundaries, plateau/non-plateau, cancellation, restart, and historical version preservation end to end.
+
+**Primary outputs:** Versioned scoring services, complete Phase 1-3 state machine, scientific-rigor controls, Winner/Best Sensitivity, Grade, continuous cycle/plateau behavior, and protocol audit records/tests.
+
+**Exit gate:** Every mechanism in `RULES.md` Section 1 is enforced and auditable; all formula/version examples and boundaries pass; tie and provenance paths lose no data; no statistical flag is silently deleted; historical scores cannot be silently recalculated under new versions.
+
+### Phase 6 — Analysis, Reporting, Comparison, and Data Export
+
+**Objective:** Provide immediate user feedback and reproducible deeper analysis without duplicating authoritative business calculations or exceeding export-only scope.
+
+**Entry gate:** Phase 5 produces stable, versioned, queryable results and audit records.
+
+**Execution rounds:**
+
+- **P6-R1 — Analysis data contracts:** Define read-only, version-aware datasets/views/exports for Python; validate profile isolation, units, null/incomplete-session handling, inclusive versus outlier-excluded aggregates, and parity with authoritative C# results.
+- **P6-R2 — Immediate Unity feedback:** Implement the current-session Accuracy-per-sensitivity bar chart and Dashboard result/activity updates using Service/Data outputs only; do not recompute scores in UI code.
+- **P6-R3 — HTML report charts 1-5:** Build and verify Sensitivity vs Performance Score Curve, Overflick vs Underflick Balance Chart, Movement vs Stationary Error Graph, Progressive Narrowing Timeline, and Consistency Trend Over Time with traceable source data and versions.
+- **P6-R4 — HTML report charts 6-10:** Build and verify Reaction Time Distribution, Performance Grade Timeline, Reaction Time vs Sensitivity Scatter Plot, Submovement Count vs eDPI Curve, and eDPI-normalized Profile Comparison Chart. Verify `shots.submovement_count` exists and is valid before rendering Chart 9.
+- **P6-R5 — HTML report composition:** Assemble the versioned standalone report, scientific notes, Winner/tie context, formula/calibration metadata, inclusive authoritative results, sensitivity analysis, warnings, and clear handling of missing/insufficient data.
+- **P6-R6 — Profile-separated Data Export:** Implement validated JSON and CSV export with raw/derived/audit/version metadata, safe filenames, deterministic encoding/columns, and explicit messaging that export is not Import/Restore or a recovery guarantee.
+- **P6-R7 — Cross-profile Comparison Page:** Implement the simple table from `DESIGN.md` for profile rows and Consistency, Reaction Time Tier, and Performance Score columns normalized through eDPI; preserve profile separation and avoid unsupported causal comparisons.
+- **P6-R8 — Analysis/export verification:** Compare Python and C# fixtures, inspect all charts/report layouts, validate empty/partial/tie/outlier/fatigue cases, round-trip parse JSON/CSV as data files only, and confirm no Import/Restore behavior exists.
+
+**Primary outputs:** Stable analysis contract, Unity feedback, ten report charts, standalone HTML report, JSON/CSV Data Export, profile comparison table, and parity/visual/export tests.
+
+**Exit gate:** All ten required charts and the Comparison Page are correct and readable; exported values match the database and preserve versions/profile scope; Python never becomes a second authority for business formulas; Import/Restore remains out of scope.
+
+### Phase 7 — Integration and Release QA
+
+**Objective:** Prove the whole offline application is reproducible, robust, scientifically compliant, and packageable on the target environment.
+
+**Entry gate:** Phases 0-6 are complete with no unresolved Open Questions or failed phase gates.
+
+**Execution rounds:**
+
+- **P7-R1 — Golden-path end-to-end validation:** On a clean database, exercise setup through Phase 1-3, Best Sensitivity, Grade, continuous cycle, report, comparison, and Data Export; verify every persisted relationship and version against the documented journey.
+- **P7-R2 — Edge and failure matrix:** Re-run all `RULES.md` input cases plus duplicate/active profile operations, floor notification, tie/floor deduplication, invalid/incomplete configuration, incomplete batteries, near-zero CV, acquisition errors, statistical outliers, fatigue, database interruption, cancellation, and restart/recovery.
+- **P7-R3 — Reproducibility, timing, and performance:** Repeat fixed-seed/calibration-fixture runs; inspect sampling/frame/timer tolerances, long-session stability, database growth/write latency, analysis runtime, and raw-data preservation under the frozen target environment.
+- **P7-R4 — Migration and historical compatibility:** Test database migration from every supported schema state, immutable historical formula/calibration interpretation, report/export compatibility, cascade behavior, and controlled rejection of unsupported/corrupt states without silent data loss.
+- **P7-R5 — UX, visual, and scope compliance:** Inspect every screen/arena state against `DESIGN.md`; verify fixed palette/crosshair, non-blocking warnings, readable HUD/tables/reports, no decorative scope creep, no unsupported grip/ADS causal scoring, no cloud/multiplayer/Import/Restore functionality, and fully offline operation.
+- **P7-R6 — Release packaging and clean-machine smoke:** Produce the release candidate, dependency/license inventory, configuration/database locations, operator instructions, and checksums; install/run on a clean target environment and execute a smoke workflow without development-only dependencies.
+- **P7-R7 — Final evidence and release handoff:** Run the complete automated suite, archive calibration/test/report evidence, resolve or explicitly block every failure, update all documentation and this status log, and prepare the release commit. Tagging, publishing, or pushing remains a separate project-owner-authorized action.
+
+**Primary outputs:** End-to-end evidence pack, edge/failure matrix, reproducibility/performance results, migration tests, visual/scope audit, packaged release candidate, operating notes, and final release checklist.
+
+**Exit gate:** Every `AGENTS.md` Definition of Done condition passes; all phase gates remain green on the packaged build; no open ambiguity, critical defect, silent data loss, or undocumented deviation remains; the project owner can authorize the release/tag/push from a fully evidenced release candidate.
+
 ## Status Log
 
 (For each phase, add an entry using the format below as work progresses. Do not delete old entries — this is a historical log.)
@@ -87,6 +268,15 @@ This file starts empty of phase content. The coding agent is responsible for ana
 - Test results (per Definition of Done in AGENTS.md): Confirmed 19 Resolved and 0 Open questions; 17 ordered `RESEARCH.md` sections; 23 valid local Markdown links with 0 broken links; all 31 schema foreign keys include `ON DELETE CASCADE`; no active TODO/TBD/Pending Proposal markers exist outside the reusable historical log template; `git diff --check` passed; and local `HEAD` matched `origin/main` at the audited commit before this audit entry.
 - Issues encountered: The decision/specification baseline is complete, but production calibration data is intentionally not complete because Phase 0 has not started. Missing measured outputs are input sampling rate/tolerance and edge handling, normalization and Submovement bounds, Consistency-tier cutpoints, scoring-zero tolerance, target/arena/camera/FOV/frame-rate geometry, Tracking duration/speed/trial contract, center-hit zone, and confirmatory analysis/sample contract.
 - Next step: Treat the Markdown set as ready for Phase 0, not as permission to implement the production Test Engine. Complete and version Phase 0 outputs first.
+
+### Pre-Development: Whole-Project Execution Plan
+
+- Status: Completed
+- Date: 2026-07-14
+- What was done: Re-read all nine authoritative root Markdown files in the required order and expanded the eight-phase roadmap into 53 individually authorizable execution rounds. Added the per-round working protocol, strict dependency chain, entry gates, primary outputs, and exit gates covering Signal Calibration, production foundation/data, profiles/setup, Test Engine core, four modes, Phase 1-3 protocol/scoring, analysis/export, and integration/release QA.
+- Test results (per Definition of Done in AGENTS.md): Documentation-only planning task. Verified 8 Phase headings, 53 unique round IDs, and exactly 8 Entry Gates, 8 Primary Output groups, and 8 Exit Gates. Confirmed every feature group, schema area, all 10 exact report charts, scientific-rigor mechanism, input-validation rule, design surface, coding-layer constraint, analysis/export deliverable, Phase 0 blocker, worked-example requirement, and release concern has an owning round and exit gate. Confirmed the plan does not authorize production Test Engine or scoring implementation before Calibration Configuration v1 is frozen; `git diff --check` passed.
+- Issues encountered: No new specification contradiction or Open Question was found. The plan intentionally requires real target-environment measurements and user-assisted trace collection in Phase 0 rather than inventing missing calibration values.
+- Next step: Begin only P0-R1 (Calibration protocol and acceptance matrix) when explicitly authorized by the project owner.
 
 ### Phase [number]: [name]
 
