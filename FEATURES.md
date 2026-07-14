@@ -25,8 +25,9 @@ Launch Application
 During profile creation, the user provides:
 
 - Hardware DPI (manually entered, or derived via the Physical Ruler Test fallback described in `CONTEXT.md`)
+- Current in-game sensitivity, stored for comparison with the calculated PSA baseline
 - Dominant hand
-- Crosshair configuration (locked for the lifetime of the profile — see Section 2.2 below)
+- Crosshair color (selected once during profile creation and locked for the lifetime of the profile — see Section 2.2 below). Dot style and dot size are fixed by the application and are not user-configurable.
 - Grip style (Fingertip / Palm / Claw / Hybrid) — descriptive field only, stored for the user's own reference, never used in any calculation
 - Movement strategy (Wrist / Arm / Hybrid) — descriptive field only, same restriction as above
 - Mousepad width and height in centimeters — used only for Mousepad Constraint Validation (see `RESEARCH.md`, Section 9)
@@ -48,8 +49,8 @@ The testing system consists of four modes. Each mode measures a distinct dimensi
 |---|---|---|---|---|
 | 1 | Flick — Close Range | Targets spawn around a central point at close distance, high spawn frequency (Aim Lab style) | Reaction Time, Overflick/Underflick | High sensitivity favors flicky entry players |
 | 2 | Flick — Far Range | Targets spawn far apart in both time and position | Travel Time (isolated from Reaction Time) | Low sensitivity favors methodical/precision aimers |
-| 3 | Tracking | Continuously moving target (3 patterns: linear / curved / variable-speed) | Time-on-Target %, Tracking Deviation (SD) | Grip Tension 60-80% concept |
-| 4 | Micro-Correction | Stationary, small-sized target near current crosshair position (5-20 px offset; see `RESEARCH.md`, Section 13) | Micro-Adjustment Count, Final Precision Error | PSA Method "natural feel" concept |
+| 3 | Tracking | Continuously moving target (3 patterns: linear / curved / variable-speed) | Time-on-Target %, Tracking Deviation (SD) | Grip Tension 60-80% concept (see `RESEARCH.md`, Section 14) |
+| 4 | Micro-Correction | Stationary, small-sized target near current crosshair position (5-20 px offset; see `RESEARCH.md`, Section 13) | Micro-Adjustment Count, Final Precision Error, Submovement Count | PSA Method "natural feel" concept + Submovement Analysis |
 
 ### 2.1 Target Size Variation (Fitts's Law Compliance)
 
@@ -57,7 +58,7 @@ Every mode must randomize target size (Small / Medium / Large) together with dis
 
 ### 2.2 Crosshair Consistency
 
-The crosshair is locked to a single fixed configuration for the entire lifetime of a profile (small dot, high-contrast color). This eliminates a confounding variable unrelated to sensitivity itself. Crosshair configuration is stored at the profile level (see `ARCHITECTURE.md`, `profiles.crosshair_config`) and must not change between test sessions or test modes.
+The crosshair uses an application-fixed dot style and dot size. During profile creation, the user may select only a high-contrast color; that selected color is then locked for the entire lifetime of the profile. This eliminates a confounding variable unrelated to sensitivity itself. The selected color is stored in `profiles.crosshair_config` and must not change between test sessions or test modes.
 
 ### 2.3 Per-Mode Performance Score Storage
 

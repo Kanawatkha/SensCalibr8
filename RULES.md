@@ -25,7 +25,7 @@ The system must display general, non-diagnostic warning messages when it detects
 
 Warning conditions:
 
-The numeric wrist-strain threshold below is not supported by SensCalibr8 Project Proposal V3.0 and is blocked pending a human decision in `PROGRESS.md`, OQ-001. Do not implement this condition until that question is resolved.
+The numeric wrist-strain condition below is defined in `RESEARCH.md`, Section 16, from SensCalibr8 Project Proposal V3.0, Section 9. It is informational and non-diagnostic only.
 
 ```
 IF edpi < 200 AND movement_strategy == "wrist":
@@ -40,6 +40,7 @@ Every triggered flag must be recorded in `injury_risk_flags` (see `ARCHITECTURE.
 ## 3. Input Validation Rules
 
 - Hardware DPI must be a positive integer. Reject and prompt again on non-positive or non-integer input before allowing any PSA Baseline calculation to run.
+- Current in-game sensitivity must be a positive numeric value. Reject missing, non-numeric, zero, or negative input before comparing it with the PSA Baseline.
 - If a calculated eDPI falls below the floor of 160 (see `RESEARCH.md`, Section 2), the system must auto-adjust it upward to 160 and clearly notify the user of the adjustment. Never silently apply the floor without informing the user.
 - Profile names must be unique within the local installation. Reject profile creation with a duplicate name and prompt the user to choose a different one.
 - The system must prevent deletion of a profile that is currently active/selected. The user must exit that profile before it can be deleted (see `FEATURES.md`, Section 1.3).

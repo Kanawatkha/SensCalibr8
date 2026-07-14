@@ -28,7 +28,8 @@ Do not add additional geometry, decorative objects, complex lighting, or shadows
 ### 1.3 Crosshair
 
 - Style: a small dot.
-- Color: a high-contrast color, distinct from both the background and the target color, so it remains visible in all conditions.
+- Size: application-defined and fixed; the user cannot resize or restyle it.
+- Color: selected by the user during profile creation from the supported high-contrast colors, distinct from both the background and the target color. Color is the only configurable crosshair property.
 - The crosshair configuration is locked per profile and does not change between test modes or sessions (see `FEATURES.md`, Section 2.2).
 
 ### 1.4 First-Person View
@@ -66,7 +67,7 @@ A grid or list of existing profile slots, each showing: profile name, last activ
 
 ### 2.3 Setup Screen
 
-A simple form-style table of fields matching the Physical Profile Setup fields defined in `FEATURES.md`, Section 1.2: Hardware DPI (with a link/button to trigger the Physical Ruler Test fallback), dominant hand, crosshair configuration, grip style, movement strategy, mousepad width/height, and ADS multiplier. Use plain labeled input rows, arranged as a table — no multi-step wizard is required.
+A simple form-style table of fields matching the Physical Profile Setup fields defined in `FEATURES.md`, Section 1.2: Hardware DPI (with a link/button to trigger the Physical Ruler Test fallback), current in-game sensitivity, dominant hand, crosshair color, grip style, movement strategy, mousepad width/height, and ADS multiplier. Crosshair style and size are displayed as fixed application values rather than editable inputs. Use plain labeled input rows, arranged as a table — no multi-step wizard is required.
 
 ### 2.4 Dashboard Screen
 

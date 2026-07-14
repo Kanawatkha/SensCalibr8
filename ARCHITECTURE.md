@@ -69,22 +69,25 @@ Any violation of these rules invalidates the scientific rigor mechanisms describ
 
 ## 4. Database Schema
 
-All tables reference `profile_id` with `ON DELETE CASCADE`, so deleting a profile removes all associated data across every table automatically. This cascading behavior must be enforced at the database level, not application level.
+All foreign keys use `ON DELETE CASCADE`. Deleting a profile therefore removes all associated data, and deleting a parent session or cycle removes its dependent rows. This cascading behavior must be enforced at the database level, not application level. SQLite foreign-key enforcement is disabled by default on each new connection, so every Data Layer connection must execute `PRAGMA foreign_keys = ON` immediately after opening and verify that it is enabled before any schema mutation or write.
 
 ```sql
+PRAGMA foreign_keys = ON;
+
 profiles (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
-    created_date TEXT,
-    mouse_dpi INTEGER,
-    dominant_hand TEXT,
-    crosshair_config TEXT,
-    grip_style TEXT,                -- Fingertip / Palm / Claw / Hybrid (descriptive only, see CONTEXT.md)
-    movement_strategy TEXT,         -- Wrist / Arm / Hybrid (descriptive only, see CONTEXT.md)
-    mousepad_width_cm REAL,
-    mousepad_height_cm REAL,
-    ads_multiplier REAL,            -- reference field only, no dedicated test mode (see CONTEXT.md)
-    last_active_date TEXT
+    created_date TEXT NOT NULL,
+    mouse_dpi INTEGER NOT NULL,
+    current_sensitivity REAL NOT NULL,
+    dominant_hand TEXT NOT NULL,
+    crosshair_config TEXT NOT NULL, -- user-selected color only; dot style and size are application-fixed
+    grip_style TEXT NOT NULL,       -- Fingertip / Palm / Claw / Hybrid (descriptive only, see CONTEXT.md)
+    movement_strategy TEXT NOT NULL,-- Wrist / Arm / Hybrid (descriptive only, see CONTEXT.md)
+    mousepad_width_cm REAL NOT NULL,
+    mousepad_height_cm REAL NOT NULL,
+    ads_multiplier REAL NOT NULL,   -- reference field only, no dedicated test mode (see CONTEXT.md)
+    last_active_date TEXT NOT NULL
 )
    |
    | (ON DELETE CASCADE — applies to all tables below via profile_id)
@@ -92,29 +95,29 @@ profiles (
 
 sessions (
     id INTEGER PRIMARY KEY,
-    profile_id INTEGER REFERENCES profiles(id),
-    date TEXT,
-    mode TEXT,                      -- one of the 4 Test Modes defined in FEATURES.md
-    duration_sec INTEGER
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    mode TEXT NOT NULL,             -- one of the 4 Test Modes defined in FEATURES.md
+    duration_sec INTEGER NOT NULL
 )
 
 shots (
     id INTEGER PRIMARY KEY,
-    session_id INTEGER REFERENCES sessions(id),
-    profile_id INTEGER REFERENCES profiles(id),
-    target_id INTEGER,
-    distance_zone TEXT,
-    target_size TEXT,
-    spawn_position TEXT,
-    spawn_timestamp REAL,
+    session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    target_id INTEGER NOT NULL,
+    distance_zone TEXT NOT NULL,
+    target_size TEXT NOT NULL,
+    spawn_position TEXT NOT NULL,
+    spawn_timestamp REAL NOT NULL,
     first_mouse_movement_timestamp REAL,
     hit_timestamp REAL,
     hit_position TEXT,
-    is_hit BOOLEAN,
+    is_hit BOOLEAN NOT NULL,
     is_outlier BOOLEAN,
-    is_adaptation_shot BOOLEAN,      -- TRUE if within the first 50% discard window (see RESEARCH.md)
-    sensitivity_value REAL,
-    initial_offset_distance REAL,
+    is_adaptation_shot BOOLEAN,     -- NULL while active; finalized after the session ends (see Schema Notes)
+    sensitivity_value REAL NOT NULL,
+    initial_offset_distance REAL NOT NULL,
     micro_adjustment_count INTEGER,
     submovement_count INTEGER,       -- computed per algorithm in RESEARCH.md, Section 5
     final_precision_error REAL
@@ -122,61 +125,69 @@ shots (
 
 tracking_data (
     id INTEGER PRIMARY KEY,
-    session_id INTEGER REFERENCES sessions(id),
-    profile_id INTEGER REFERENCES profiles(id),
-    pattern_type TEXT,               -- linear / curved / variable-speed
-    target_speed REAL,
-    duration_ms INTEGER,
-    deviation_samples TEXT,
-    time_on_target_ms INTEGER,
-    time_on_target_percentage REAL
-)
-
-sensitivity_tests (
-    id INTEGER PRIMARY KEY,
-    profile_id INTEGER REFERENCES profiles(id),
-    edpi REAL,
-    cm_360 REAL,
-    avg_performance_score REAL,
-    performance_score_by_mode TEXT,  -- JSON: {mode: score}, one entry per Test Mode
-    grade TEXT,                      -- S / A / B / C / D
-    formula_version TEXT,            -- must be recorded on every row, see RESEARCH.md Section 4
-    phase INTEGER,                   -- 1, 2, or 3 (Testing Protocol phase, see FEATURES.md)
-    sample_size INTEGER
-)
-
-phase_history (
-    id INTEGER PRIMARY KEY,
-    profile_id INTEGER REFERENCES profiles(id),
-    phase_number INTEGER,
-    winner_edpi REAL,
-    timestamp TEXT
+    session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    sensitivity_value REAL NOT NULL,
+    pattern_type TEXT NOT NULL,      -- linear / curved / variable-speed
+    target_speed REAL NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    deviation_samples TEXT NOT NULL,
+    time_on_target_ms INTEGER NOT NULL,
+    time_on_target_percentage REAL NOT NULL
 )
 
 cycles (
     id INTEGER PRIMARY KEY,
-    profile_id INTEGER REFERENCES profiles(id),
-    cycle_number INTEGER,
-    start_date TEXT,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_number INTEGER NOT NULL,
+    start_date TEXT NOT NULL,
     end_date TEXT,
     outcome TEXT
 )
 
+sensitivity_tests (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
+    edpi REAL NOT NULL,
+    cm_360 REAL NOT NULL,
+    avg_performance_score REAL NOT NULL,
+    performance_score_by_mode TEXT NOT NULL, -- JSON: {mode: score}, one entry per Test Mode
+    grade TEXT,                      -- S / A / B / C / D
+    formula_version TEXT NOT NULL,   -- must be recorded on every row, see RESEARCH.md Section 4
+    phase INTEGER NOT NULL,          -- 1, 2, or 3 (Testing Protocol phase, see FEATURES.md)
+    sample_size INTEGER NOT NULL
+)
+
+phase_history (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
+    phase_number INTEGER NOT NULL,
+    winner_edpi REAL NOT NULL,
+    timestamp TEXT NOT NULL
+)
+
 injury_risk_flags (
     id INTEGER PRIMARY KEY,
-    profile_id INTEGER REFERENCES profiles(id),
-    flag_type TEXT,                  -- e.g. 'low_edpi_wrist_strain', 'mousepad_constraint_violation'
-    triggered_date TEXT,
-    edpi_at_trigger REAL,
-    acknowledged BOOLEAN DEFAULT 0
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    flag_type TEXT NOT NULL,         -- e.g. 'low_edpi_wrist_strain', 'mousepad_constraint_violation'
+    triggered_date TEXT NOT NULL,
+    edpi_at_trigger REAL NOT NULL,
+    acknowledged BOOLEAN NOT NULL DEFAULT 0
 )
 ```
 
 ### 4.1 Schema Notes
 
 - `grip_style`, `movement_strategy`, `ads_multiplier` are descriptive/reference fields only. They must never be read by any Performance Score calculation or used to bias results (see `CONTEXT.md`, Out of Scope).
+- `current_sensitivity` stores the user's current Valorant sensitivity entered during profile setup so that Step 0 can compare it with the PSA baseline.
+- `crosshair_config` stores only the high-contrast color selected at profile creation. Dot style and dot size are fixed by the application and must not be stored as user-editable settings.
 - `formula_version` on `sensitivity_tests` is mandatory on every insert. Never leave it null.
-- `is_adaptation_shot` must be set at write time based on the adaptation cutoff logic in `RESEARCH.md`, Section 8, so that analysis queries can filter it without recomputing the cutoff each time.
+- `is_adaptation_shot` must remain null while shots are being captured. After the session ends and the actual shot total for each sensitivity value is known, the Data Layer must compute the cutoff from `RESEARCH.md`, Section 8, and update every shot in a single transaction. Analysis must reject session data containing an unfinalized null adaptation flag.
+- `cycle_id` is mandatory on `sensitivity_tests` and `phase_history`, preserving an explicit relationship between repeated Phase 1-3 runs and their owning continuous-improvement cycle.
+- `tracking_data.sensitivity_value` is mandatory so Tracking results can be grouped and compared by the sensitivity actually tested.
+- `PRAGMA foreign_keys = ON` must be executed and verified separately for every SQLite connection; setting it only during initial schema creation is insufficient.
 - `injury_risk_flags` records are informational only and must never block or alter test execution; they exist purely to surface warnings to the user (see `RULES.md`).
 
 ---

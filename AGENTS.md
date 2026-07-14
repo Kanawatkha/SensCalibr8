@@ -21,6 +21,7 @@ There is no fixed phase plan provided for this project. You are responsible for 
 
 - Before writing any code, confirm which phase is currently active by reading `PROGRESS.md`.
 - Never hardcode a numeric constant, threshold, or formula weight without first checking `RESEARCH.md`. If a number is not present in `RESEARCH.md`, do not invent it — flag it as a question in `PROGRESS.md` instead.
+- Before adding or changing a citation to Proposal V3.0 or the Consolidated Research Report, open and verify the actual local source under `reference/`. Never cite either source from memory, a prior summary, or a secondary paraphrase.
 - Follow the coding standards in `SKILL.md` and the scientific/behavioral constraints in `RULES.md` without exception. These are not suggestions.
 - Work in small, testable increments. Do not attempt to implement multiple phases in a single pass.
 - Commit your work with git at logical checkpoints (e.g. after a phase or sub-feature is completed and verified).
