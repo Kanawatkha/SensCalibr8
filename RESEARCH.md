@@ -52,20 +52,19 @@ Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Propos
 ## 4. Performance Score Formula
 
 ```
-Performance Score =
+Performance Score = 100 x (
     (Consistency         x 0.35) +
     (Accuracy%           x 0.30) +
     (Reaction Speed      x 0.20) +
     (Precision Score     x 0.15) -
     (Submovement Penalty x 0.10)
+)
 ```
 
 ```
 Submovement Penalty = normalized_submovement_count
 Required range = 0.0 to 1.0 (higher = more penalty)
 ```
-
-The source proposal defines the required normalized range, but not the transformation from raw Submovement Count into that range. The transformation remains blocked by `PROGRESS.md`, OQ-004.
 
 This score determines the "Winner" of each phase in the testing protocol. Weighting was deliberately calibrated as follows:
 
@@ -78,7 +77,7 @@ Every stored Performance Score result must be tagged with a `formula_version` va
 
 Consistency is the standard deviation of the mode's primary error metric after the adaptation cutoff: Final Precision Error for shot-based modes and Tracking Deviation for Tracking. Lower raw Consistency values are better and must be inverted before normalization. Precision Score is derived from Final Precision Error; lower raw error is better and must likewise be inverted before normalization. Center-Hit Percentage is retained as a diagnostic only and does not enter Performance Score.
 
-Cross-metric normalization/scaling and the transformation of raw Submovement Count into Submovement Penalty remain pending proposal review; see `PROGRESS.md`, OQ-003 and OQ-004. Do not implement the aggregate formula until those questions are approved.
+All positive components and the Submovement Penalty must be normalized to `[0,1]` before weights are applied. The weighted result is multiplied by 100 for the stored and displayed Performance Score. Normalization bounds and versions are fixed by Phase 0 and must never be inferred from the currently selected comparison data.
 
 ### 4.1 Tracking-Mode Component Mapping
 
@@ -92,15 +91,48 @@ Tracking maps its native metrics into the shared component model:
 The removed Reaction Speed weight is redistributed proportionally across the remaining positive weights, preserving their original relative proportions:
 
 ```
-Tracking Performance Score =
+Tracking Performance Score = 100 x (
     (Consistency               x 0.4375) +
     (Time-on-Target Percentage x 0.3750) +
     (Precision Score           x 0.1875)
+)
 ```
 
-These weights are derived exactly by dividing the original remaining positive weights (0.35, 0.30, 0.15) by their sum (0.80). They are not independently invented empirical weights. The normalization method for all three inputs remains pending OQ-003 approval.
+These weights are derived exactly by dividing the original remaining positive weights (0.35, 0.30, 0.15) by their sum (0.80). They are not independently invented empirical weights.
 
-Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 6.4; VCT Masters Reykjavik 2022 official tournament statistics (Riot Games), as cited by the proposal.
+### 4.2 Fixed, Versioned Metric Normalization
+
+Each metric uses fixed lower and upper bounds, `L` and `U`, selected and validated during Phase 0. Inherent mathematical bounds may be used for bounded percentages; empirical metrics such as Reaction Time, Final Precision Error, Tracking Deviation, and Consistency require mode-specific calibrated bounds. Every bound set must be immutable and identified by `normalization_version`.
+
+For a metric where higher values are better:
+
+```
+normalized_high(x, L, U) = clamp((x - L) / (U - L), 0, 1)
+```
+
+For a metric where lower values are better:
+
+```
+normalized_low(x, L, U) = 1 - clamp((x - L) / (U - L), 0, 1)
+```
+
+`U` must be strictly greater than `L`; otherwise the configuration is invalid and scoring must stop. Bounds must not be recalculated from the current user, session, candidate set, or newly appended history because doing so would change historical score meaning. A result must store both `formula_version` and `normalization_version`.
+
+Source: project-owner approval dated 2026-07-14; [OECD/JRC Handbook on Constructing Composite Indicators](https://www.oecd.org/en/publications/handbook-on-constructing-composite-indicators-methodology-and-user-guide_9789264043466-en.html), normalization and robustness guidance.
+
+### 4.3 Submovement Penalty Mapping
+
+Submovement Count uses a capped linear mapping with mode-specific Phase 0 bounds:
+
+```
+Submovement Penalty = clamp((count - L_mode) / (U_mode - L_mode), 0, 1)
+```
+
+`L_mode` and `U_mode` must be calibrated, frozen, and stored under the active `normalization_version`. Only valid post-adaptation observations contribute to the aggregated count. Percentile, z-score, and nonlinear penalty mappings are not permitted without a new versioned specification and supporting evidence.
+
+Source: project-owner approval dated 2026-07-14; [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 6.4 (required 0.0-1.0 output); [Boudaoud, Spjut, and Kim, IEEE CoG 2022](https://ieee-cog.org/2022/assets/papers/paper_64.pdf) (Submovement Count measurement); [OECD/JRC Composite Indicators Handbook](https://www.oecd.org/en/publications/handbook-on-constructing-composite-indicators-methodology-and-user-guide_9789264043466-en.html) (normalization).
+
+Source for the base formula and weights: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 6.4; VCT Masters Reykjavik 2022 official tournament statistics (Riot Games), as cited by the proposal.
 
 ---
 
@@ -108,12 +140,17 @@ Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Propos
 
 Submovement count measures how many distinct corrective mouse movements occur during a single aiming action. A lower count indicates a more efficient, "one-shot" aim adjustment; a higher count indicates repeated overshoot/undershoot corrections, which this project treats as evidence that the tested sensitivity is not well suited to the user.
 
-Recommended detection parameters:
+Approved detection pipeline:
 
-- Movement start threshold: approximately 8 degrees/second of angular mouse velocity
-- Movement end threshold: approximately 4 degrees/second of angular mouse velocity
-- Refractory period between counted submovements: approximately 80 ms (movements occurring within this window of a previous movement are not counted as new submovements)
-- Apply a Butterworth low-pass filter to raw mouse delta samples before velocity calculation, to remove sensor noise that would otherwise be miscounted as intentional movement
+1. Capture every raw mouse delta with a high-resolution timestamp; do not use the Unity render frame rate as the input sampling rate.
+2. Convert cumulative deltas into angular azimuth/elevation in degrees using the tested sensitivity and input calibration before filtering.
+3. Resample the angular trace onto a uniform time grid using the stable measured input-event rate validated in Phase 0. A session whose event timing does not satisfy the calibrated stability contract is invalid for Submovement analysis.
+4. Apply a fifth-order, 7 Hz low-pass Butterworth filter represented as second-order sections (SOS), using forward-backward offline filtering to avoid phase displacement of movement boundaries.
+5. Calculate angular velocity from the filtered angular trace.
+6. Start a submovement when angular velocity crosses 8 degrees/second and end it when velocity falls below 4 degrees/second.
+7. Enforce an 80 ms refractory period between counted submovements.
+
+The sampling rate is intentionally not hardcoded here: Phase 0 must measure, validate, and freeze it together with resampling tolerance and edge-handling behavior. The complete configuration must be stored under a `signal_pipeline_version`. The 7 Hz response and 8/4 degrees-per-second thresholds must also be validated against recorded traces during Phase 0 before production use.
 
 ```
 adaptation_cutoff = floor(total_shots_per_value x 0.5)
@@ -122,7 +159,7 @@ valid_shots = shots[adaptation_cutoff:]  # only these shots contribute to Perfor
 
 This same adaptation cutoff logic (discarding the first 50% of shots per tested value) also applies to Submovement Count aggregation, not only to Performance Score — see Section 8 below.
 
-Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Sections 6.4 and 7.2; Boudaoud, Spjut, and Kim, "Analyzing Mouse Sensitivity Preferences in First-Person Aiming Tasks," IEEE Conference on Games (CoG) 2022. The relationship between submovement count and sensitivity was confirmed as monotonic in that study; the discard proportion (50%) is drawn directly from that paper's methodology ("we discard the first 50% of trials from each session as an adaptation period"), scaled to this project's smaller per-value sample size (30+ shots here vs. 500 trials per session in the original study).
+Source: project-owner approval dated 2026-07-14; [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Sections 6.4 and 7.2; [Boudaoud, Spjut, and Kim, IEEE CoG 2022](https://ieee-cog.org/2022/assets/papers/paper_64.pdf) (fifth-order 7 Hz Butterworth filter, 8/4 degrees-per-second thresholds, 80 ms refractory period, and 50% adaptation discard); [SciPy Butterworth documentation](https://docs.scipy.org/doc/scipy-1.13.1/reference/generated/scipy.signal.butter.html) (SOS numerical-stability guidance); [SciPy forward-backward filtering documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html) (zero-phase filtering); Challis, [automatic cutoff-frequency selection for biomechanical data](https://pure.psu.edu/en/publications/a-procedure-for-the-automatic-determination-of-filter-cutoff-freq/) (residual/autocorrelation validation).
 
 ---
 
@@ -208,18 +245,29 @@ The following values define the required execution structure of the three-phase 
 
 The offset set is a project-owner decision that combines the seven-value Proposal V3.0 requirement with the +/-20%, +/-10%, and +/-5% progression documented by the 9-Week Rule in Section 15.
 
-Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.2 (seven-value Phase 1 and minimum 30 shots); [Consolidated Research Report](reference/Valorant_Research_Report.md), Section 2, "The 9-Week Rule" (+/-20%, +/-10%, and +/-5% progression); project-owner decision dated 2026-07-14 for the exact seven-value mapping and per-mode sample scope.
+After exploratory scoring identifies the top two candidates, the system must collect fresh confirmatory matched blocks that were not used to rank those candidates. Each pair must use the same mode and controlled target sequence/condition block. Compare paired block-level Performance Scores using a two-sided paired randomization/permutation test at `alpha = 0.05`.
+
+The confirmation report must include the paired effect estimate, a 95% confidence interval, the p-value, sample size, and analysis/configuration versions. If the difference is not statistically significant, the result is a statistical tie: do not force a Phase 1 Winner, and carry both candidates into Phase 2. Phase 0 must determine and freeze the confirmatory block/sample contract before protocol implementation.
+
+Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Sections 7.2 and 8 (seven-value Phase 1, minimum 30 shots, and required significance gate); [Consolidated Research Report](reference/Valorant_Research_Report.md), Section 2, "The 9-Week Rule" (+/-20%, +/-10%, and +/-5% progression); project-owner decisions dated 2026-07-14 for the exact seven-value mapping, per-mode sample scope, and significance design; Ernst, [Permutation Methods: A Basis for Exact Inference](https://doi.org/10.1214/088342304000000396); [NIST paired signed-rank guidance](https://www.itl.nist.gov/div898/software/dataplot/refman1/auxillar/signrank.htm) (paired alternatives and typical 0.05 significance level); [ASA Statement on p-values](https://doi.org/10.1080/00031305.2016.1154108) (p-values do not measure effect size or practical importance).
 
 ### 11.2 Phase 2 — Progressive Narrowing
 
 - Candidate range: Phase 1 Winner, Winner +10%, and Winner -10%
-- Minimum sessions: 5 sessions per sensitivity value
-- Maximum sessions: 10 sessions per sensitivity value
-- Stabilization threshold: Performance Score variability below 10%
+- Minimum repetition: 5 complete Protocol Batteries per sensitivity value (5 Database Sessions per mode)
+- Maximum repetition: 10 complete Protocol Batteries per sensitivity value (10 Database Sessions per mode)
+- Stabilization threshold: Performance Score coefficient of variation below 10%
 
-The 10% threshold is authoritative. The exact statistical definition of "variability below 10%" (raw standard deviation versus coefficient of variation) is not specified by the source proposal and must be resolved before implementation; see `PROGRESS.md`, Open Questions / Ambiguities.
+For complete Protocol Batteries at one sensitivity value:
 
-Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.3 (Phase 2 — Progressive Narrowing).
+```
+CV_percent = 100 x sample_SD(Performance Score) / abs(mean(Performance Score))
+stabilized = CV_percent < 10
+```
+
+The calculation uses sample standard deviation. If the mean is zero or too close to zero for numerically stable division under the approved scoring precision, CV is undefined and the candidate is not stabilized. It must never pass by substituting zero, suppressing the error, or using raw SD units. The scoring-precision tolerance must be frozen in Phase 0 configuration.
+
+Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.3 (Phase 2 — Progressive Narrowing); project-owner approval dated 2026-07-14; [NIST Coefficient of Variation](https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/coefvari.htm).
 
 ### 11.3 Phase 3 — Final Narrowing
 
@@ -237,11 +285,23 @@ Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Propos
 
 ## 12. Outlier Detection Threshold
 
-A shot is flagged as an outlier when its measured result lies beyond 3 standard deviations from the applicable distribution. Outlier shots are treated as accidental observations rather than representative sensitivity performance and must be marked through `shots.is_outlier`.
+A valid post-adaptation observation is flagged for a specific metric when:
 
-The metric, sample scope, and handling details used to construct the applicable distribution must remain consistent within an analysis and be documented by the implementation.
+```
+abs(observed_value - group_mean) > 3 x sample_SD
+```
 
-Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 8 (Scientific Rigor & Confound Control).
+Apply the adaptation cutoff first. Then construct each distribution separately within the homogeneous scope `(profile, cycle, phase, mode, sensitivity_value, metric_name)`; never pool profiles, modes, sensitivity values, or unlike metrics. Shot-based modes use valid shot-level metric observations. Tracking uses Phase 0-defined trial/window aggregate metrics rather than individual autocorrelated deviation samples.
+
+The 3-SD rule is flag-first:
+
+- Preserve every raw observation and store a metric-level audit record containing the value, group scope, group mean, sample SD, threshold, algorithm version, and disposition.
+- The authoritative Winner calculation includes statistically flagged observations by default.
+- Reports must show the inclusive aggregate and a sensitivity-analysis aggregate excluding statistically flagged observations.
+- Exclusion from the authoritative Winner calculation is permitted only when a separate documented acquisition/data-quality error is confirmed. Statistical extremeness alone is not a data-quality error.
+- Perform one documented detection pass against the complete eligible group; do not repeatedly remove a point and recompute until no flags remain.
+
+Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 8 (3-SD Scientific Rigor requirement); project-owner approval dated 2026-07-14; [NIST Detection of Outliers](https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h.htm) (investigate and retain potential outliers rather than automatically deleting them).
 
 ---
 
@@ -312,7 +372,7 @@ A fatigue flag is informational. It must not exclude the session from Winner sel
 
 ### 17.3 Grade Combination
 
-Assign separate Reaction Time and Consistency tiers, then use the worse of the two as the final Grade. The method for deriving a Consistency tier from the normalized Consistency Score remains dependent on the approved normalization design in OQ-003.
+Assign separate Reaction Time and Consistency tiers, then use the worse of the two as the final Grade. Phase 0 must calibrate and freeze versioned Consistency-tier cutpoints on the normalized Consistency Score before Grade implementation; they must not be derived dynamically from the current comparison set.
 
 ### 17.4 Plateau Detection
 
@@ -331,7 +391,7 @@ Tests use fixed world geometry with locked camera FOV, camera configuration, and
 
 The 30-shot minimum applies separately to each shot-based Test Mode at each sensitivity value. Shots are not pooled across modes. Tracking uses a separate duration/trial-based contract established during Phase 0: Signal Calibration.
 
-Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolving OQ-002, OQ-006, OQ-009, OQ-013, OQ-014, OQ-015, and OQ-017. These decisions remain implementation-blocked until all Pending Proposal Review questions are approved.
+Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolving OQ-002, OQ-006, OQ-009, OQ-013, OQ-014, OQ-015, and OQ-017. Values assigned to Phase 0 remain implementation-blocked until calibration is completed and versioned.
 
 ---
 
@@ -346,9 +406,13 @@ Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolvi
 | Performance Score weight — Reaction Speed | 0.20 | 4 |
 | Performance Score weight — Precision Score | 0.15 | 4 |
 | Performance Score weight — Submovement Penalty | 0.10 (subtracted) | 4 |
-| Submovement start threshold | ~8 deg/s | 5 |
-| Submovement end threshold | ~4 deg/s | 5 |
-| Submovement refractory period | ~80 ms | 5 |
+| Normalized component range | 0.0-1.0 | 4.2 |
+| Stored/displayed Performance Score multiplier | 100 | 4 |
+| Submovement Butterworth order | 5 | 5 |
+| Submovement cutoff frequency | 7 Hz | 5 |
+| Submovement start threshold | 8 deg/s | 5 |
+| Submovement end threshold | 4 deg/s | 5 |
+| Submovement refractory period | 80 ms | 5 |
 | Adaptation discard proportion | 50% of shots per value | 8 |
 | Headshot% target threshold ceiling | 35% | 7 |
 | Reaction Time Tier S | `t < 200 ms` | 6 |
@@ -359,9 +423,11 @@ Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolvi
 | Phase 1 sensitivity values | 7 | 11.1 |
 | Phase 1 minimum sample | 30 shots per value per shot-based mode | 11.1 |
 | Phase 2 narrowing range | +/- 10% | 11.2 |
-| Phase 2 minimum sessions | 5 per value | 11.2 |
-| Phase 2 maximum sessions | 10 per value | 11.2 |
-| Phase 2 stabilization threshold | Performance Score variability < 10% | 11.2 |
+| Phase 2 minimum repetition | 5 complete batteries per value | 11.2 |
+| Phase 2 maximum repetition | 10 complete batteries per value | 11.2 |
+| Phase 1 significance level | two-sided `alpha = 0.05` | 11.1 |
+| Phase 1 confidence interval | 95% | 11.1 |
+| Phase 2 stabilization threshold | Performance Score CV < 10% | 11.2 |
 | Phase 3 narrowing range | +/- 5% | 11.3 |
 | Continuous training block | 5-10 sessions | 11.4 |
 | Outlier detection threshold | Beyond 3 standard deviations | 12 |

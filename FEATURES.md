@@ -66,6 +66,8 @@ Each test mode produces its own Performance Score for a given sensitivity value.
 
 For shot-based modes, Final Precision Error is inverted and normalized into the scoring component named **Precision Score**. Center-Hit Percentage is retained only as a diagnostic. For Tracking, Time-on-Target replaces Accuracy and inverted Tracking Deviation supplies Precision Score; Reaction Speed and Submovement Penalty are omitted, with the remaining positive weights redistributed proportionally as defined in `RESEARCH.md`, Section 4.1.
 
+Every component uses the fixed versioned normalization in `RESEARCH.md`, Section 4.2. Bounds must come from the active Phase 0 calibration configuration and must never be recomputed from the currently displayed profiles, sessions, or candidate values.
+
 ### 2.4 Reproducible Test Geometry
 
 All production tests use fixed world geometry with locked FOV, camera configuration, and Target Frame Rate. Concrete target sizes, distances, spawn frequency, Tracking speed/duration, arena dimensions, center-hit zone, and frame-rate value must be measured and versioned during Phase 0: Signal Calibration before the Test Engine is implemented.
@@ -88,8 +90,8 @@ The number of values and minimum sample size are defined in `RESEARCH.md`, Secti
 - **Counterbalancing:** randomize the test order of all 7 values to prevent order effects.
 - **Minimum sample:** at least 30 shots per sensitivity value separately for each shot-based mode. Tracking uses a distinct duration/trial-based contract that must be calibrated in Phase 0; samples are never pooled across modes.
 - **Blind testing:** the numeric sensitivity value must never be displayed to the user during testing, to prevent placebo effects from influencing performance.
-- **Winner selection:** select the Winner based on Performance Score, and verify statistical significance between the top 2 candidates before finalizing.
-- **Unresolved test method:** the required statistical test and alpha threshold are blocked pending a decision in `PROGRESS.md`, OQ-005.
+- **Winner selection:** use exploratory Performance Score to identify the top 2, then collect fresh matched confirmatory blocks and run the two-sided paired randomization/permutation test at `alpha = 0.05` defined in `RESEARCH.md`, Section 11.1.
+- **Tie behavior:** if the top-2 difference is not statistically significant, declare a statistical tie and carry both candidates into Phase 2; never force a Phase 1 Winner from the p-value alone.
 - **Adaptation Period:** discard the first 50% of shots recorded per tested value before computing any metric (see `RESEARCH.md`, Section 8). This is not a fixed shot count — it scales with the actual number of shots recorded for that value.
 
 ```
@@ -99,11 +101,11 @@ valid_shots = shots[adaptation_cutoff:]  # only these contribute to Performance 
 
 ### 3.3 Phase 2 — Progressive Narrowing (+/- 10%)
 
-The narrowing range, session limits, and stabilization threshold are defined in `RESEARCH.md`, Section 11.2. The exact statistical interpretation of the 10% threshold remains an open question recorded in `PROGRESS.md` and must be resolved before implementation.
+The narrowing range, session limits, and stabilization threshold are defined in `RESEARCH.md`, Section 11.2.
 
 - Test the Phase 1 Winner, Winner+10%, and Winner-10%.
-- Minimum 5 sessions per value.
-- Condition for concluding: the standard deviation of Performance Score across sessions must fall below 10% before a result is finalized. Up to 10 sessions may be run per value if the result has not stabilized within 5.
+- Minimum 5 complete Protocol Batteries per value (equivalent to 5 Database Sessions per mode).
+- Condition for concluding: the coefficient of variation of Performance Score across complete Protocol Batteries must be below 10% before a result is finalized. A zero or numerically near-zero mean is undefined and does not pass stabilization. Up to 10 complete batteries may be run per value if the result has not stabilized within 5.
 
 ### 3.4 Phase 3 — Final Narrowing (+/- 5%)
 
@@ -115,6 +117,10 @@ The narrowing range is defined in `RESEARCH.md`, Section 11.3.
 ### 3.4.1 Session and Protocol Battery Contract
 
 A database Session is one Test Mode at one sensitivity value. A Protocol Battery is the complete set of four mode-specific Sessions at one sensitivity value and is grouped by `battery_id` (see `ARCHITECTURE.md`). Protocol repetition and Phase 2/3 completion counts must use complete batteries; an incomplete battery must not count toward the 5-10 requirement.
+
+### 3.4.2 Outlier Handling
+
+Apply adaptation first, then evaluate the 3-SD rule within the metric-specific homogeneous scope defined in `RESEARCH.md`, Section 12. Statistical outliers are flagged and audited but remain in the authoritative Winner score by default. Reports must show both the inclusive aggregate and the flagged-row-excluded sensitivity analysis. Exclusion from the authoritative score requires a separately documented acquisition/data-quality error.
 
 ### 3.5 Step 4 — Performance Gate Check
 

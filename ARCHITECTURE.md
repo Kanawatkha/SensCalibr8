@@ -47,10 +47,14 @@ Any violation of these rules invalidates the scientific rigor mechanisms describ
 +----------------------+           +--------------------------+
 |   Unity (C#)          |  write    |    SQLite Database        |
 |  - Aim Test Scenes x4  | -------->  |   - profiles                |
-|  - Raw mouse capture   |           |   - protocol_batteries        |
+|  - Raw mouse capture   |           |   - calibration_configs      |
+|                       |           |   - protocol_batteries        |
 |  - In-app quick chart  | <--------  |   - sessions                  |
 |                       |           |   - shots (raw log)             |
 +----------------------+   read     |   - tracking_data                 |
+                                     |   - mouse_samples                  |
+                                     |   - outlier_flags                   |
+                                     |   - significance_tests               |
                                      |   - sensitivity_tests               |
                                      |   - phase_history                     |
                                      |   - cycles                              |
@@ -94,6 +98,29 @@ profiles (
    | (ON DELETE CASCADE — applies to all tables below via profile_id)
    v
 
+calibration_configs (
+    id INTEGER PRIMARY KEY,
+    config_version TEXT NOT NULL UNIQUE,
+    normalization_version TEXT NOT NULL UNIQUE,
+    signal_pipeline_version TEXT NOT NULL UNIQUE,
+    test_geometry_version TEXT NOT NULL UNIQUE,
+    created_date TEXT NOT NULL,
+    input_sampling_rate_hz REAL NOT NULL,
+    resampling_tolerance_ms REAL NOT NULL,
+    butterworth_order INTEGER NOT NULL,
+    cutoff_frequency_hz REAL NOT NULL,
+    submovement_start_deg_per_sec REAL NOT NULL,
+    submovement_end_deg_per_sec REAL NOT NULL,
+    refractory_period_ms REAL NOT NULL,
+    normalization_bounds_json TEXT NOT NULL,
+    submovement_bounds_by_mode_json TEXT NOT NULL,
+    consistency_tier_cutpoints_json TEXT NOT NULL,
+    scoring_zero_tolerance REAL NOT NULL,
+    target_geometry_json TEXT NOT NULL,
+    tracking_contract_json TEXT NOT NULL,
+    confirmatory_contract_json TEXT NOT NULL
+)
+
 cycles (
     id INTEGER PRIMARY KEY,
     profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -109,6 +136,7 @@ protocol_batteries (
     cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
     sensitivity_value REAL NOT NULL,
     phase INTEGER NOT NULL,          -- 1, 2, or 3
+    purpose TEXT NOT NULL,           -- exploratory / confirmatory / narrowing / training
     started_date TEXT NOT NULL,
     completed_date TEXT
 )
@@ -117,6 +145,7 @@ sessions (
     id INTEGER PRIMARY KEY,
     profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     battery_id INTEGER NOT NULL REFERENCES protocol_batteries(id) ON DELETE CASCADE,
+    calibration_config_id INTEGER NOT NULL REFERENCES calibration_configs(id) ON DELETE CASCADE,
     date TEXT NOT NULL,
     mode TEXT NOT NULL,             -- one of the 4 Test Modes defined in FEATURES.md
     duration_sec INTEGER NOT NULL,
@@ -161,10 +190,43 @@ tracking_data (
     time_on_target_percentage REAL NOT NULL
 )
 
+mouse_samples (
+    id INTEGER PRIMARY KEY,
+    session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    shot_id INTEGER REFERENCES shots(id) ON DELETE CASCADE,
+    sample_index INTEGER NOT NULL,
+    timestamp_sec REAL NOT NULL,
+    raw_delta_x REAL NOT NULL,
+    raw_delta_y REAL NOT NULL,
+    azimuth_deg REAL NOT NULL,
+    elevation_deg REAL NOT NULL,
+    UNIQUE (session_id, sample_index)
+)
+
+outlier_flags (
+    id INTEGER PRIMARY KEY,
+    session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    shot_id INTEGER REFERENCES shots(id) ON DELETE CASCADE,
+    tracking_data_id INTEGER REFERENCES tracking_data(id) ON DELETE CASCADE,
+    metric_name TEXT NOT NULL,
+    scope_key TEXT NOT NULL,
+    observed_value REAL NOT NULL,
+    group_mean REAL NOT NULL,
+    sample_sd REAL NOT NULL,
+    threshold_value REAL NOT NULL,
+    algorithm_version TEXT NOT NULL,
+    is_statistical_outlier BOOLEAN NOT NULL,
+    is_data_quality_error BOOLEAN NOT NULL DEFAULT 0,
+    excluded_from_authoritative_score BOOLEAN NOT NULL DEFAULT 0,
+    disposition_reason TEXT,
+    CHECK ((shot_id IS NOT NULL) <> (tracking_data_id IS NOT NULL))
+)
+
 sensitivity_tests (
     id INTEGER PRIMARY KEY,
     profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
+    calibration_config_id INTEGER NOT NULL REFERENCES calibration_configs(id) ON DELETE CASCADE,
     edpi REAL NOT NULL,
     cm_360 REAL NOT NULL,
     avg_performance_score REAL NOT NULL,
@@ -173,6 +235,39 @@ sensitivity_tests (
     formula_version TEXT NOT NULL,   -- must be recorded on every row, see RESEARCH.md Section 4
     phase INTEGER NOT NULL,          -- 1, 2, or 3 (Testing Protocol phase, see FEATURES.md)
     sample_size INTEGER NOT NULL
+)
+
+significance_tests (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
+    calibration_config_id INTEGER NOT NULL REFERENCES calibration_configs(id) ON DELETE CASCADE,
+    phase INTEGER NOT NULL,
+    candidate_a_edpi REAL NOT NULL,
+    candidate_b_edpi REAL NOT NULL,
+    test_method TEXT NOT NULL,
+    alternative TEXT NOT NULL,
+    alpha REAL NOT NULL,
+    p_value REAL NOT NULL,
+    effect_estimate REAL NOT NULL,
+    confidence_level REAL NOT NULL,
+    confidence_interval_lower REAL NOT NULL,
+    confidence_interval_upper REAL NOT NULL,
+    paired_sample_size INTEGER NOT NULL,
+    is_significant BOOLEAN NOT NULL,
+    formula_version TEXT NOT NULL,
+    result TEXT NOT NULL             -- winner candidate or statistical_tie
+)
+
+significance_test_pairs (
+    id INTEGER PRIMARY KEY,
+    significance_test_id INTEGER NOT NULL REFERENCES significance_tests(id) ON DELETE CASCADE,
+    pair_index INTEGER NOT NULL,
+    candidate_a_battery_id INTEGER NOT NULL REFERENCES protocol_batteries(id) ON DELETE CASCADE,
+    candidate_b_battery_id INTEGER NOT NULL REFERENCES protocol_batteries(id) ON DELETE CASCADE,
+    candidate_a_score REAL NOT NULL,
+    candidate_b_score REAL NOT NULL,
+    UNIQUE (significance_test_id, pair_index)
 )
 
 phase_history (
@@ -198,10 +293,16 @@ injury_risk_flags (
 
 - `grip_style`, `movement_strategy`, `ads_multiplier` are descriptive/reference fields only. They must never be read by any Performance Score calculation or used to bias results (see `CONTEXT.md`, Out of Scope).
 - `current_sensitivity` stores the user's current Valorant sensitivity entered during profile setup so that Step 0 can compare it with the PSA baseline.
+- `calibration_configs` is immutable after first use. Phase 0 must populate every field from validated measurements; production sessions cannot reference an incomplete or draft configuration. The fixed signal constants must match `RESEARCH.md`, Section 5, while measured sampling, tolerance, bounds, tier cutpoints, geometry, Tracking, and confirmatory contracts are versioned outputs of Phase 0.
+- Every `session` and `sensitivity_test` references the exact calibration configuration used. Together with `formula_version`, this preserves the meaning of historical raw data and scores.
 - A database `session` is exactly one Test Mode at one sensitivity value. A `protocol_battery` groups exactly four sessions (one per mode) at one sensitivity value. `UNIQUE (battery_id, mode)` prevents duplicate mode runs inside a battery; battery completion requires all four modes.
 - `protocol_batteries.sensitivity_value` is the authoritative tested value for all child sessions. Any redundant sensitivity value recorded in shot or Tracking rows must match the parent battery exactly.
 - Fatigue is evaluated only after session capture and adaptation finalization. `fatigue_score_change_percentage` stores the first-half versus second-half Performance Score change, and `fatigue_flag` is true only for a decline greater than 15%; the flag must not exclude that session from Winner selection.
 - `shots.is_center_hit` supports Center-Hit Percentage as a diagnostic only. The center-zone geometry remains blocked by Phase 0: Signal Calibration and must be versioned with the test configuration.
+- `mouse_samples` preserves timestamped raw deltas and their calibrated angular representation. Filtering and angular velocity are derived analysis outputs and must not overwrite raw samples.
+- `shots.is_outlier` is a denormalized any-metric indicator only. `outlier_flags` is authoritative and stores one metric-level audit record per flagged observation. Statistical flags default to inclusion; `excluded_from_authoritative_score` may be true only with a separately confirmed `is_data_quality_error` and documented reason.
+- `protocol_batteries.purpose` separates exploratory data from fresh confirmatory data and prevents reuse of ranking batteries as confirmation evidence.
+- `significance_tests` stores the complete paired confirmatory decision. `significance_test_pairs` links every paired score back to the two source batteries. Test method, alternative, alpha, confidence interval, sample size, versions, and tie/winner result are mandatory for auditability.
 - `crosshair_config` stores only the high-contrast color selected at profile creation. Dot style and dot size are fixed by the application and must not be stored as user-editable settings.
 - `formula_version` on `sensitivity_tests` is mandatory on every insert. Never leave it null.
 - `is_adaptation_shot` must remain null while shots are being captured. After the session ends and the actual shot total for each sensitivity value is known, the Data Layer must compute the cutoff from `RESEARCH.md`, Section 8, and update every shot in a single transaction. Analysis must reject session data containing an unfinalized null adaptation flag.

@@ -10,12 +10,12 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 ## Phase Plan
 
-0. **Signal Calibration** — Capture representative raw traces; validate and freeze the input sampling policy, signal-filter parameters, angular-velocity event thresholds, target geometry, camera/FOV, frame rate, Tracking duration/speed, center-hit zone, and versioned normalization bounds. This phase must complete before Test Engine implementation.
+0. **Signal Calibration** — Capture representative raw traces; validate and freeze the input sampling policy, signal-filter response, angular-velocity event thresholds, target geometry, camera/FOV, frame rate, Tracking duration/speed, center-hit zone, normalization/Submovement bounds, Consistency-tier cutpoints, scoring-zero tolerance, and confirmatory sample contract. This phase must complete before Test Engine implementation.
 1. **Foundation and Data Layer** — Create the Unity project foundation, SQLite schema/migrations, validated repositories, formula/config versioning, and automated database tests.
 2. **Profiles and Setup** — Implement profile lifecycle, physical setup fields, PSA baseline, eDPI/mousepad validation, and non-blocking ergonomic warnings.
 3. **Test Engine Core** — Implement deterministic raw-input capture, precision timing, session/battery orchestration, adaptation finalization, and calibrated target spawning. Blocked until Phase 0 completes.
 4. **Four Test Modes** — Build and verify Close Flick, Far Flick, Tracking, and Micro-Correction against the frozen Phase 0 contracts.
-5. **Protocol and Scoring** — Implement Phase 1-3 execution, counterbalancing, normalization, significance gate, fatigue, outlier handling, Grade, plateau, and Winner selection after all dependent OQs are approved.
+5. **Protocol and Scoring** — Implement Phase 1-3 execution, counterbalancing, normalization, significance gate, fatigue, outlier handling, Grade, plateau, and Winner selection after Phase 0 freezes every dependent configuration and Phase 1 tie expansion is resolved.
 6. **Analysis and Data Export** — Add in-app feedback, Python analysis, HTML reporting, JSON/CSV Data Export, and cross-profile comparisons.
 7. **Integration and Release QA** — Run end-to-end protocol validation, worked examples, validation edge cases, performance/reproducibility checks, and release packaging.
 
@@ -45,12 +45,30 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 ### Pre-Development: Product Decisions and Technical Proposal
 
-- Status: In Progress — Pending Proposal Review
+- Status: Completed
 - Date: 2026-07-14
-- What was done: Applied the project owner's decisions for OQ-002, OQ-006, OQ-007, OQ-009, OQ-010, OQ-011, OQ-013, OQ-014, OQ-015, OQ-017, and OQ-018 across the research, feature, architecture, context, and rule contracts. Added Phase 0: Signal Calibration as the mandatory first development phase. Prepared externally sourced proposals for the six remaining technical/statistical questions without adding those proposals to `RESEARCH.md`.
-- Test results (per Definition of Done in AGENTS.md): Documentation-only work. Verified 18 OQ records resolve to exactly 12 Resolved and 6 Pending Proposal Review; all 14 schema foreign keys include `ON DELETE CASCADE`; `RESEARCH.md` Sections 1-17 are ordered and cross-referenced; Group A designs are absent from the specification files; and `git diff --check` passed.
-- Issues encountered: OQ-003, OQ-004, OQ-005, OQ-008, OQ-012, and OQ-016 require project-owner approval before their proposed designs become specifications. No dependent code may be written while any of these remain open, and Test Engine work additionally waits for Phase 0 calibration.
-- Next step: Obtain one-round approval or requested revisions for all six Group A proposals, then record approved designs in `RESEARCH.md` and execute Phase 0.
+- What was done: Applied the project owner's decisions for OQ-002, OQ-006, OQ-007, OQ-009, OQ-010, OQ-011, OQ-013, OQ-014, OQ-015, OQ-017, and OQ-018; added Phase 0: Signal Calibration; researched and proposed externally sourced designs for OQ-003, OQ-004, OQ-005, OQ-008, OQ-012, and OQ-016; then incorporated all six after project-owner approval. Added immutable calibration/version contracts, raw mouse samples, metric-level outlier audit records, and significance-test audit storage to the schema.
+- Test results (per Definition of Done in AGENTS.md): Documentation-only work. Final verification for the approved Group A incorporation is recorded in the next status entry.
+- Issues encountered: Values requiring empirical measurement cannot be invented during specification work. Input sampling rate/tolerance, normalization and Submovement bounds, Consistency-tier cutpoints, geometry, Tracking contract, and confirmatory sample contract are therefore explicit Phase 0 deliverables.
+- Next step: Execute Phase 0: Signal Calibration before Test Engine implementation.
+
+### Pre-Development: Approved Technical Designs Incorporated
+
+- Status: Completed
+- Date: 2026-07-14
+- What was done: Incorporated the approved designs for OQ-003, OQ-004, OQ-005, OQ-008, OQ-012, and OQ-016 into the authoritative research, feature, rule, and architecture contracts. Added fixed/versioned normalization, capped linear Submovement mapping, paired permutation confirmation, CV stabilization, the complete signal pipeline, flag-first outlier handling, immutable calibration configuration, raw input samples, outlier audits, and significance pair traceability.
+- Test results (per Definition of Done in AGENTS.md): Documentation-only work. Verified 19 OQ records with 18 Resolved and 1 newly discovered integration question; all 27 schema foreign keys include `ON DELETE CASCADE`; both local primary-source links resolve; `RESEARCH.md` Sections 1-17 remain ordered; no previously pending Group A status remains; and `git diff --check` passed.
+- Issues encountered: Combining the newly approved statistical-tie behavior with the existing Phase 2 Winner +/-10% rule exposes an undefined two-anchor candidate expansion. This is recorded as OQ-019 instead of being guessed.
+- Next step: Obtain the project owner's OQ-019 choice. Phase 0 planning may proceed independently, but Phase 2 tie candidate generation remains blocked.
+
+### Phase 0: Signal Calibration
+
+- Status: Not Started — Ready
+- Date: 2026-07-14
+- What was done: Defined the required calibration outputs, versioning contract, approved signal-processing method, and implementation blockers.
+- Test results (per Definition of Done in AGENTS.md): No calibration data has been collected yet; this entry does not claim Phase 0 completion.
+- Issues encountered: Representative raw traces and the target execution environment are required to determine the remaining measured values.
+- Next step: Design the Phase 0 data-collection procedure and acceptance tests, then collect representative traces before freezing configuration version 1.
 
 ### Phase [number]: [name]
 
@@ -67,6 +85,8 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 (Record here any point where a specification in FEATURES.md, RESEARCH.md, ARCHITECTURE.md, DESIGN.md, SKILL.md, or RULES.md was unclear or conflicting, per the Error Handling Expectation in AGENTS.md. Do not resolve these by guessing — flag them here for human review.)
 
+Current register status: **18 Resolved, 1 Open**. Phase 0 measured deliverables are implementation prerequisites, not unresolved specification decisions.
+
 ### OQ-001: Wrist-Strain Warning Threshold
 
 - Status: Resolved on 2026-07-14 by direct source verification
@@ -79,28 +99,31 @@ This file starts empty of phase content. The coding agent is responsible for ana
 - Resolution: Consistency is the standard deviation of the primary metric after the adaptation cutoff: Final Precision Error for shot-based modes and Tracking Deviation for Tracking. Lower values are better and must be inverted before normalization.
 - Specification gap: Performance Score assigns a 0.35 weight to Consistency, but no document defines the underlying observation or distribution whose variability represents Consistency.
 - Possible options: standard deviation of final precision error; standard deviation of Performance Score across sessions; coefficient of variation of a selected shot-level metric; or a composite consistency measure.
-- Implementation constraint: Normalized Consistency scoring remains blocked only by OQ-003 approval.
+- Implementation constraint: Production Consistency scoring waits for Phase 0 normalization bounds and tier cutpoints.
 
 ### OQ-003: Performance Score Metric Normalization
 
-- Status: Pending Proposal Review
+- Status: Resolved — user approved technical proposal on 2026-07-14
+- Resolution: Use fixed, versioned min-max utility scaling to `[0,1]`, with direction inversion for lower-is-better metrics and clamping at the configured bounds. Phase 0 calibrates and freezes mode/metric bounds; current comparison data must never redefine them. Multiply the weighted aggregate by 100.
 - Specification gap: Accuracy percentage, Reaction Time in milliseconds, and Submovement Count use incompatible units and directions, but no normalization/scaling formula is defined before applying the documented weights.
 - Possible options: fixed benchmark-based 0-100 scaling; min-max scaling against documented bounds; z-score standardization against an approved reference population; or percentile-based scaling.
-- Implementation constraint: Do not implement aggregate Performance Score calculation until one normalization method and its bounds/reference data are confirmed.
+- Implementation constraint: Do not implement production scoring until Phase 0 freezes a valid `normalization_version`, including bounds, scoring-zero tolerance, and Consistency-tier cutpoints.
 
 ### OQ-004: Submovement Penalty Transformation
 
-- Status: Pending Proposal Review
+- Status: Resolved — user approved technical proposal on 2026-07-14
+- Resolution: Use `clamp((count - L_mode) / (U_mode - L_mode), 0, 1)` on valid post-adaptation observations. Phase 0 calibrates immutable mode-specific bounds under the normalization version.
 - Specification gap: Direct verification of SensCalibr8 Project Proposal V3.0, Section 6.4 confirms that Submovement Penalty must be `normalized_submovement_count` on a 0.0-1.0 scale, with higher values producing more penalty. However, the proposal still does not define how raw Submovement Count is transformed into that normalized range.
 - Possible options: capped linear mapping into 0.0-1.0; benchmark-based mapping normalized into 0.0-1.0; percentile mapping expressed as 0.0-1.0; or another transformation supported by research that preserves the confirmed output range.
-- Implementation constraint: Do not implement the penalty term until its transformation, bounds, and aggregation method are confirmed.
+- Implementation constraint: Do not implement the penalty until Phase 0 freezes `L_mode` and `U_mode` with `U_mode > L_mode`.
 
 ### OQ-005: Statistical Significance Test
 
-- Status: Pending Proposal Review
+- Status: Resolved — user approved technical proposal on 2026-07-14
+- Resolution: After exploratory top-2 selection, collect fresh matched confirmatory blocks and use a two-sided paired randomization/permutation test at `alpha = 0.05`. Report effect estimate, 95% confidence interval, p-value, and sample size. A non-significant result is a statistical tie and both candidates continue to Phase 2.
 - Specification gap: Phase 1 requires significance testing between the top two candidates, but the test type, pairing structure, significance level, assumptions, and fallback behavior are unspecified.
 - Possible options: paired t-test when justified by paired, approximately normal observations; Wilcoxon signed-rank test for paired non-normal observations; or a pre-defined decision tree selected with statistical justification.
-- Implementation constraint: Do not finalize a Phase 1 Winner using statistical significance until the method and alpha threshold are confirmed.
+- Implementation constraint: Phase 0 must freeze the matched-block and confirmatory sample contract before Winner implementation.
 
 ### OQ-006: Fatigue Detection Algorithm
 
@@ -108,23 +131,24 @@ This file starts empty of phase content. The coding agent is responsible for ana
 - Resolution: Compare Performance Score between chronological halves of valid post-adaptation observations in the same session. Flag a second-half decline greater than 15%; retain the session in Winner selection.
 - Specification gap: Fatigue Detection is mandatory, but no measured variable, comparison window, decline threshold, minimum sample, or warning behavior is defined.
 - Possible options: compare early versus late session Performance Score; detect a reaction-time increase together with an accuracy decline; use a rolling trend over valid shots; or use a session-to-session trend.
-- Implementation constraint: Calculation remains blocked until the Performance Score dependencies in Group A are approved.
+- Implementation constraint: Production calculation waits for Phase 0 scoring configuration.
 
 ### OQ-007: Generation of Seven Phase 1 Sensitivity Values
 
 - Status: Resolved — user decision on 2026-07-14
 - Resolution: Generate seven values at 0%, +/-5%, +/-10%, and +/-20% around the PSA baseline, supported by the 9-Week Rule progression in the Consolidated Research Report.
 - Specification gap: Phase 1 requires seven sensitivity values around the PSA baseline, but their spacing, range, rounding, and eDPI-floor interaction are unspecified.
-- Source verification note: The Consolidated Research Report's 9-Week Rule defines baseline versus +/-20%, followed by +/-10% and +/-5%, while Proposal V3.0 separately requires seven Phase 1 values. Neither source maps the +/-20% comparison into a seven-value sequence, so the generation rule remains unresolved.
+- Source verification note: The Consolidated Research Report's 9-Week Rule defines baseline versus +/-20%, followed by +/-10% and +/-5%, while Proposal V3.0 separately requires seven Phase 1 values. Neither source maps them into one sequence; the project-owner decision above supplies that mapping.
 - Possible options: symmetric percentage offsets around the PSA baseline; symmetric fixed-eDPI offsets; logarithmic spacing; or another research-supported sequence.
 - Implementation constraint: Candidate generation must use the exact approved offsets and comply with the existing eDPI floor and input-validation rules.
 
 ### OQ-008: Meaning of the Phase 2 "SD < 10%" Threshold
 
-- Status: Pending Proposal Review
+- Status: Resolved — user approved technical proposal on 2026-07-14
+- Resolution: Interpret the threshold as `CV% = 100 x sample_SD / abs(mean)` across complete Protocol Batteries at one sensitivity. Stabilization requires `CV < 10%`; a zero or numerically near-zero mean is undefined and does not pass.
 - Specification gap: The 10% stabilization threshold is authoritative in SensCalibr8 Project Proposal V3.0, but raw standard deviation is expressed in score units and cannot itself be interpreted as a percentage without a defined denominator.
 - Possible options: coefficient of variation (`SD / mean * 100`); SD below 10% of the score scale; or SD below 10% of another explicitly defined reference value.
-- Implementation constraint: Do not implement Phase 2 stabilization or stopping logic until the denominator and zero/near-zero handling are confirmed.
+- Implementation constraint: Use the Phase 0 scoring-zero tolerance and never substitute a raw-SD or zero fallback.
 
 ### OQ-009: Definition of a Phase 2/3 Session
 
@@ -140,7 +164,7 @@ This file starts empty of phase content. The coding agent is responsible for ana
 - Resolution: Map Time-on-Target to Accuracy and inverted Tracking Deviation to Precision Score. Omit Reaction Speed and Submovement Penalty, then proportionally redistribute the remaining positive weights to Consistency 0.4375, Time-on-Target 0.3750, and Precision Score 0.1875.
 - Specification gap: Tracking produces Time-on-Target and Tracking Deviation, but the global Performance Score expects Consistency, Accuracy, Reaction Speed, Precision/Headshot, and Submovement Penalty. The sources do not define how unavailable components are handled for Tracking.
 - Possible options: define a Tracking-specific score with separately approved weights; transform Tracking metrics into the shared normalized component model; or report Tracking separately and exclude it from the aggregate Winner score.
-- Implementation constraint: Calculation remains blocked by OQ-003 normalization approval.
+- Implementation constraint: Production calculation waits for Phase 0 normalization bounds.
 
 ### OQ-011: Precision Metric for Spherical Targets
 
@@ -148,14 +172,15 @@ This file starts empty of phase content. The coding agent is responsible for ana
 - Resolution: Store both metrics. Final Precision Error is inverted and normalized as the scoring component named Precision Score; Center-Hit Percentage is diagnostic only.
 - Specification gap: The arena uses a single-color spherical target with no head region, so Valorant Headshot Percentage cannot be measured literally.
 - Possible options: use mean Final Precision Error; use Center-Hit Percentage with an approved center-radius definition; retain both as separate diagnostics and select one normalized component for Performance Score; or redesign the target with a defined precision zone.
-- Implementation constraint: Precision Score remains blocked by OQ-003; Center-Hit geometry must be frozen in Phase 0.
+- Implementation constraint: Precision Score bounds and Center-Hit geometry must be frozen in Phase 0.
 
 ### OQ-012: Submovement Signal-Processing Parameters
 
-- Status: Pending Proposal Review
+- Status: Resolved — user approved technical proposal on 2026-07-14
+- Resolution: Capture timestamped raw deltas, convert to angular traces, uniformly resample at the validated input-event rate, apply a fifth-order 7 Hz Butterworth SOS filter with forward-backward offline filtering, derive angular velocity, and detect events at 8/4 degrees per second with an 80 ms refractory period.
 - Specification gap: The sources recommend a Butterworth low-pass filter and approximate angular-velocity thresholds, but do not specify filter order, cutoff frequency, sampling-rate policy, delta-to-angle conversion, or handling of variable input sample intervals.
 - Possible options: reproduce parameters from the underlying IEEE CoG 2022 implementation if obtainable; define and validate a fixed sampling pipeline against recorded traces; or make the filter sampling-rate-aware with versioned configuration after empirical calibration.
-- Implementation constraint: Do not implement or version the Submovement Count algorithm until the complete signal-processing pipeline is approved.
+- Implementation constraint: Phase 0 must validate and freeze sampling rate, timing tolerance, edge handling, and trace acceptance criteria under `signal_pipeline_version` before production implementation.
 
 ### OQ-013: Performance Grade Assignment Formula
 
@@ -163,7 +188,7 @@ This file starts empty of phase content. The coding agent is responsible for ana
 - Resolution: Assign Reaction Time and Consistency tiers separately and use the worse tier as the final Grade.
 - Specification gap: Step 4 requires a single S-D Grade from Reaction Time and Consistency, but only Reaction Time tiers are defined and no combination rule exists.
 - Possible options: assign the worse of the two metric tiers; use an approved two-dimensional lookup matrix; or normalize both metrics and apply a separately approved weighted composite before tiering.
-- Implementation constraint: Final Grade remains blocked until OQ-003 establishes how Consistency maps to a tier.
+- Implementation constraint: Final Grade waits for Phase 0 to freeze Consistency-tier cutpoints under the calibration configuration.
 
 ### OQ-014: Plateau Detection Criteria
 
@@ -171,7 +196,7 @@ This file starts empty of phase content. The coding agent is responsible for ana
 - Resolution: Plateau requires an unchanged Grade across three consecutive cycles and an absolute relative Performance Score change below 5% across the same window. Trigger an immediate Phase 1-3 rerun using the current sensitivity as baseline.
 - Specification gap: The continuous cycle triggers recalibration when Grade plateaus, but does not define the observation window, required number of sessions, allowed change, trend method, or behavior when Grade oscillates.
 - Possible options: unchanged Grade across an approved consecutive-session window; Performance Score trend slope below an approved threshold; or a statistical no-improvement test over an approved rolling window.
-- Implementation constraint: The trigger remains blocked until Performance Score and Grade dependencies are approved and implemented.
+- Implementation constraint: The trigger waits for Phase 0 scoring and Consistency-tier configuration plus the required three-cycle history.
 
 ### OQ-015: Target Geometry and Test Parameters
 
@@ -183,10 +208,11 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 ### OQ-016: Outlier Detection Scope and Handling
 
-- Status: Pending Proposal Review
+- Status: Resolved — user approved technical proposal on 2026-07-14
+- Resolution: Apply adaptation first, then a one-pass metric-specific 3-SD rule within `(profile, cycle, phase, mode, sensitivity, metric)`. Tracking uses trial/window aggregates. Preserve raw data and flag by default; authoritative Winner scores retain statistical flags, while reports also show an excluded sensitivity analysis. Authoritative exclusion requires a separately documented acquisition/data-quality error.
 - Specification gap: The 3-SD threshold is confirmed, but the metric, grouping scope, minimum sample, order relative to adaptation filtering, and whether outliers are excluded or only flagged are unspecified.
 - Possible options: compute per metric within each mode/sensitivity/session after adaptation and exclude flagged rows from aggregates; flag without exclusion for transparent reporting; or use a pre-defined metric-specific policy with raw and cleaned results retained side by side.
-- Implementation constraint: Do not calculate `is_outlier` or remove observations from aggregates until the scope, order, and handling policy are confirmed.
+- Implementation constraint: Use metric-level audit records; never repeatedly trim, pool heterogeneous groups, or convert statistical extremeness alone into data exclusion.
 
 ### OQ-017: Scope of the Phase 1 Minimum 30 Shots
 
@@ -203,3 +229,11 @@ This file starts empty of phase content. The coding agent is responsible for ana
 - Specification gap: The project defines per-profile JSON/CSV export as backup but does not define an Import/Restore path, schema compatibility policy, duplicate-profile handling, or formula-version migration behavior.
 - Possible options: keep export-only and explicitly add Import/Restore to `CONTEXT.md` Out of Scope; support validated JSON restore while treating CSV as analysis-only; or provide full SQLite snapshot backup/restore in addition to profile exports.
 - Implementation constraint: Do not implement Import/Restore or represent Data Export as a recovery guarantee.
+
+### OQ-019: Phase 2 Candidate Set After a Phase 1 Statistical Tie
+
+- Status: Awaiting human decision
+- Specification gap: OQ-005 requires both tied candidates to continue to Phase 2, while the existing Phase 2 rule defines one Phase 1 Winner plus/minus 10%. With two anchors, the candidate-set expansion and deduplication behavior are not defined.
+- Possible options: use the deduplicated union of each anchor and its +/-10% variants (preserves the narrowing rule but may produce up to six values); run two independent three-value Phase 2 branches and compare branch winners later (clean separation but substantially more testing); or test only the two tied values in Phase 2 (least work but suspends the documented +/-10% narrowing rule for ties).
+- Recommendation: Use the deduplicated union of both anchors and their +/-10% variants, with the existing eDPI floor applied and original anchor/offset provenance retained for auditability.
+- Implementation constraint: Phase 0 may proceed, but do not implement Phase 2 candidate generation for a statistical tie until this product behavior is approved.

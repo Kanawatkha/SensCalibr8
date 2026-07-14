@@ -13,9 +13,9 @@ This file defines two categories of hard rules: Scientific Rigor and Confound Co
 | Blind Testing | Prevents placebo effect from the user knowing which sensitivity value is currently being tested |
 | Counterbalancing | Prevents order effect (fatigue or warm-up bias accumulating across the test sequence) |
 | Adaptation Period (50% discard) | Prevents cold-start performance at the beginning of testing a new value from contaminating the aggregate result — see `RESEARCH.md`, Section 8 |
-| Outlier Detection | Flags shots beyond 3 standard deviations as accidental, not reflective of the tested sensitivity — see `RESEARCH.md`, Section 12 |
+| Outlier Detection | Applies the metric-specific 3-SD rule after adaptation, preserves raw data, and flags without automatic exclusion; only a separately documented data-quality error may be excluded from the authoritative score (see `RESEARCH.md`, Section 12) |
 | Fatigue Detection | Compares first-half versus second-half Performance Score after adaptation; a decline greater than 15% is flagged but never excluded from Winner selection (see `RESEARCH.md`, Section 17.2) |
-| Statistical Significance Test | Prevents declaring a "Winner" between candidate values based on statistical noise alone — method pending in `PROGRESS.md`, OQ-005 |
+| Statistical Significance Test | Uses fresh matched confirmatory blocks and a two-sided paired randomization/permutation test at `alpha = 0.05`; a non-significant result is a statistical tie carried into Phase 2 (see `RESEARCH.md`, Section 11.1) |
 
 Every one of these mechanisms must be implemented before a Phase (see `FEATURES.md`, Section 3) can be considered functionally complete. None of them are optional add-ons — skipping any one of them invalidates the scientific basis of the entire testing protocol.
 
@@ -54,4 +54,4 @@ The system supports profile-separated JSON and CSV Data Export for portability a
 
 ### 4.2 Formula Versioning
 
-Every result computed from the Performance Score formula must be tagged with the `formula_version` value active at the time of calculation (see `ARCHITECTURE.md`, `sensitivity_tests.formula_version`). This prevents ambiguity if formula weights are revised in the future, and preserves the ability to meaningfully compare historical results against current ones.
+Every result computed from the Performance Score formula must be tagged with the `formula_version` and immutable calibration configuration active at the time of calculation (see `ARCHITECTURE.md`, `sensitivity_tests`). The configuration identifies normalization bounds, signal pipeline, geometry, tier cutpoints, and protocol contracts. Historical data must never be silently recalculated under a newer version.
