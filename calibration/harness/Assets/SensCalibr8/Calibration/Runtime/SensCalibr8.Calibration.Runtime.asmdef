@@ -1,0 +1,16 @@
+{
+  "name": "SensCalibr8.Calibration.Runtime",
+  "rootNamespace": "SensCalibr8.Calibration",
+  "references": [
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

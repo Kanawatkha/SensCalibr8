@@ -1,0 +1,19 @@
+{
+  "contract_id": null,
+  "signal_pipeline_version": null,
+  "status": "candidate-frozen",
+  "input_sampling_rate_hz": null,
+  "resampling_tolerance_ms": null,
+  "filter_padlen_samples": null,
+  "acceptance_policy": null,
+  "confirmation_required_run_count": null,
+  "acceptance_envelope": {
+    "minimum_median_sampling_rate_hz": null,
+    "maximum_median_sampling_rate_hz": null,
+    "maximum_median_absolute_deviation_ms": null,
+    "maximum_burst_interval_fraction": null,
+    "maximum_gap_interval_fraction": null
+  },
+  "pilot_source_run_ids": [],
+  "note": "Template only. Populate from reviewed pilot evidence before collecting fresh confirmation runs; never use pilot runs for confirmation."
+}

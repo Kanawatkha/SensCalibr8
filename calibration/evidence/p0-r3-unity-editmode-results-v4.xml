@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="14" result="Passed" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.3174431">
+  <test-suite type="TestSuite" id="1000" name="SensCalibr8 P0-R3 Calibration" fullname="SensCalibr8 P0-R3 Calibration" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.317443" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1016" name="SensCalibr8.Calibration.Tests.EditMode.dll" fullname="D:/Gosoft_Test/senscalibr8/calibration/harness/Library/ScriptAssemblies/SensCalibr8.Calibration.Tests.EditMode.dll" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.303505" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="7948" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1017" name="SensCalibr8" fullname="SensCalibr8" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.302417" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1018" name="Calibration" fullname="SensCalibr8.Calibration" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.298487" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1019" name="Tests" fullname="SensCalibr8.Calibration.Tests" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.296325" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1001" name="CalibrationHarnessTests" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.294901" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1005" name="AppendOnlyWriter_DrainsQueuedLinesAndRefusesOverwrite" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.AppendOnlyWriter_DrainsQueuedLinesAndRefusesOverwrite" methodname="AppendOnlyWriter_DrainsQueuedLinesAndRefusesOverwrite" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="1022164346" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.035764" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1004" name="ApprovedArtifactPath_FitsLegacyWindowsPathLimit" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.ApprovedArtifactPath_FitsLegacyWindowsPathLimit" methodname="ApprovedArtifactPath_FitsLegacyWindowsPathLimit" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="1690153740" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.004300" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1006" name="CalibrationClock_UsesPositiveHighResolutionFrequencyAndOrderedTicks" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.CalibrationClock_UsesPositiveHighResolutionFrequencyAndOrderedTicks" methodname="CalibrationClock_UsesPositiveHighResolutionFrequencyAndOrderedTicks" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="1527873936" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.003335" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1012" name="CompletedRun_WritesImmutableArtifactsAndValidIntegrityManifest" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.CompletedRun_WritesImmutableArtifactsAndValidIntegrityManifest" methodname="CompletedRun_WritesImmutableArtifactsAndValidIntegrityManifest" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="1902322280" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.043755" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1003" name="CreateRunId_RejectsNonUtcTimestamp" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.CreateRunId_RejectsNonUtcTimestamp" methodname="CreateRunId_RejectsNonUtcTimestamp" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="1517827086" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.004513" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1014" name="DisposeWithoutCompletion_FinalizesRunAsInterrupted" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.DisposeWithoutCompletion_FinalizesRunAsInterrupted" methodname="DisposeWithoutCompletion_FinalizesRunAsInterrupted" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="754052547" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.043838" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1007" name="EnvironmentFactory_CapturesRuntimeIdentityChecksumAndExplicitUnknowns" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.EnvironmentFactory_CapturesRuntimeIdentityChecksumAndExplicitUnknowns" methodname="EnvironmentFactory_CapturesRuntimeIdentityChecksumAndExplicitUnknowns" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="61297620" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.089259" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1002" name="NormalizeToken_ProducesLowercaseAsciiToken" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.NormalizeToken_ProducesLowercaseAsciiToken" methodname="NormalizeToken_ProducesLowercaseAsciiToken" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="158987928" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.001034" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1010" name="P0R3CaptureGate_AcceptsCompleteFrozenPlan" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.P0R3CaptureGate_AcceptsCompleteFrozenPlan" methodname="P0R3CaptureGate_AcceptsCompleteFrozenPlan" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="2105008362" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.002344" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1009" name="P0R3CaptureGate_AllowsUnknownAuditOnlyMouseMetadata" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.P0R3CaptureGate_AllowsUnknownAuditOnlyMouseMetadata" methodname="P0R3CaptureGate_AllowsUnknownAuditOnlyMouseMetadata" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="1134965967" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.000979" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1008" name="P0R3CaptureGate_RejectsUnknownAcceptanceEnvironment" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.P0R3CaptureGate_RejectsUnknownAcceptanceEnvironment" methodname="P0R3CaptureGate_RejectsUnknownAcceptanceEnvironment" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="1828625634" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.001631" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1011" name="P0R3CaptureGate_RequiresUnmergedMouseEvents" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.P0R3CaptureGate_RequiresUnmergedMouseEvents" methodname="P0R3CaptureGate_RequiresUnmergedMouseEvents" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="920665269" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.001079" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1015" name="RecoveryService_FinalizesAbandonedRunAndHashesPartialEvidence" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.RecoveryService_FinalizesAbandonedRunAndHashesPartialEvidence" methodname="RecoveryService_FinalizesAbandonedRunAndHashesPartialEvidence" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="1138457452" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.023114" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1013" name="RunStore_RejectsBrokenRelationshipsAndNonContiguousSequences" fullname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests.RunStore_RejectsBrokenRelationshipsAndNonContiguousSequences" methodname="RunStore_RejectsBrokenRelationshipsAndNonContiguousSequences" classname="SensCalibr8.Calibration.Tests.CalibrationHarnessTests" runstate="Runnable" seed="378356439" result="Passed" start-time="2026-07-15 04:29:42Z" end-time="2026-07-15 04:29:42Z" duration="0.023254" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: D:\Gosoft_Test\senscalibr8\calibration\evidence\p0-r3-unity-editmode-results-v4.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

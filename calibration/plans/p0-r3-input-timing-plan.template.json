@@ -1,0 +1,26 @@
+{
+  "protocol_id": "sc8-p0-r1-protocol-v1",
+  "capture_plan_id": null,
+  "environment_id": null,
+  "condition_id": null,
+  "evidence_state": null,
+  "acceptance_owner": null,
+  "planned_repeat_count": 5,
+  "trace_duration_seconds": 30,
+  "execution_order": null,
+  "controlled_motion_instruction": null,
+  "controlled_variables": {
+    "mouse_dpi": 1600,
+    "configured_polling_rate_hz": 1000,
+    "mouse_usb_path": null,
+    "display_mode": null,
+    "display_refresh_rate_hz": null,
+    "display_scaling_percent": null,
+    "vsync_state": null,
+    "adaptive_sync_state": null,
+    "power_plan": null,
+    "background_load_policy": null,
+    "focus_required": true
+  },
+  "note": "Template only. Null means unresolved and blocks capture. Freeze a new immutable plan before the first run."
+}

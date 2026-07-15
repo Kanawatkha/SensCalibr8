@@ -1,0 +1,28 @@
+{
+  "analysis_version": "p0-r3-timing-analysis-v1",
+  "capture_plan_id": "sc8-p0-r3-input-timing-pilot-v1",
+  "condition_id": "wg903-1600dpi-1000hz-user-bluetooth",
+  "device_id": 2,
+  "environment_id": "sc8-env-zulartan-wg903-v1",
+  "maximum_run_rate_hz": 143.9947009945977,
+  "minimum_run_rate_hz": 143.98018832595304,
+  "pilot_candidate_resampling_tolerance_ms": 6.8301000000019485,
+  "pilot_candidate_sampling_rate_hz": 143.99262757777475,
+  "rate_median_absolute_deviation_hz": 0.002073358291056593,
+  "requires_fresh_confirmation": true,
+  "run_count": 5,
+  "run_ids": [
+    "20260715t0420409399777z-r1",
+    "20260715t0421368343266z-r2",
+    "20260715t0422103255005z-r3",
+    "20260715t0422451518893z-r4",
+    "20260715t0423173227291z-r5"
+  ],
+  "trace_ids": [
+    "20260715t0420409399777z-r1-mouse",
+    "20260715t0421368343266z-r2-mouse",
+    "20260715t0422103255005z-r3-mouse",
+    "20260715t0422451518893z-r4-mouse",
+    "20260715t0423173227291z-r5-mouse"
+  ]
+}

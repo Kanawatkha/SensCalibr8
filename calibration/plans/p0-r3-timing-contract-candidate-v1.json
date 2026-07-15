@@ -1,0 +1,26 @@
+{
+  "contract_id": "sc8-p0-r3-timing-contract-candidate-v1",
+  "signal_pipeline_version": "sc8-signal-pipeline-candidate-v1",
+  "status": "candidate-frozen",
+  "input_sampling_rate_hz": 1000.0,
+  "resampling_tolerance_ms": 0.3990000803023577,
+  "filter_padlen_samples": 18,
+  "confirmation_required_run_count": 5,
+  "acceptance_envelope": {
+    "minimum_median_sampling_rate_hz": 1001.6024118863011,
+    "maximum_median_sampling_rate_hz": 1003.1096158422927,
+    "maximum_median_absolute_deviation_ms": 0.03960018511861563,
+    "maximum_burst_interval_fraction": 0.0677903377741892,
+    "maximum_gap_interval_fraction": 0.08839518701072775
+  },
+  "pilot_source_run_ids": [
+    "20260715t0630447749738z-r1",
+    "20260715t0631193280677z-r2",
+    "20260715t0631538304273z-r3",
+    "20260715t0632258767104z-r4",
+    "20260715t0632592526448z-r5"
+  ],
+  "pilot_aggregate_artifact": "calibration/evidence/p0-r3/pilot-v3/p0-r3-pilot-v3-aggregate-v2.json",
+  "candidate_policy": "Use the predeclared configured 1000 Hz device rate as the canonical grid. The acceptance envelope is the unexpanded minimum/maximum pilot envelope, and resampling tolerance is the largest pilot p99 single-cadence residual.",
+  "filter_padlen_basis": "The approved fifth-order Butterworth design has three SOS sections and one first-order section. Applying the documented scipy.signal.sosfiltfilt default-padlen structure formula yields 18 samples; P0-R5 must verify this against the generated coefficients."
+}

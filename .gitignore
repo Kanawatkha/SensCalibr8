@@ -1,0 +1,53 @@
+# Operating-system and editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vs/
+.vscode/
+*.suo
+*.user
+*.userprefs
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# .NET build and package outputs
+[Bb]in/
+[Oo]bj/
+.nuget/packages/
+TestResults/
+*.pdb
+
+# Unity generated/cache directories. Keep Assets, Packages, and ProjectSettings.
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Locally downloaded Unity editor/installers (multi-gigabyte, reproducible)
+calibration/.unity/
+calibration/UnityHubSetup-*.exe
+calibration/UnitySetup*.exe
+
+# Calibration binaries and disposable local test-run copies
+calibration/builds/
+calibration/harness/*.log
+calibration/harness/*test-results*.xml
+
+# Keep structured calibration evidence (JSON/XML/PNG/MD), not verbose runner logs.
+calibration/evidence/**/*.log

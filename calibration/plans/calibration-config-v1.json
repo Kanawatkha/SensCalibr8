@@ -1,0 +1,125 @@
+{
+  "calibration_configs_record": {
+    "butterworth_order": 5,
+    "config_version": "calibration_config_v1",
+    "confirmatory_contract_json": "{\"alpha\":0.05,\"alternative\":\"two-sided\",\"candidate_order_balance\":{\"A_then_B\":5,\"B_then_A\":5},\"confidence_interval\":\"two-sided-95-percent-Student-t-interval-on-10-paired-differences\",\"confidence_interval_role\":\"reported-effect-uncertainty-not-a-second-winner-gate\",\"confidence_level\":0.95,\"confirmatory_contract_version\":\"sc8-confirmatory-v1\",\"decision\":\"p-value-strictly-less-than-0.05-selects-the-sign-of-the-effect; otherwise-statistical-tie\",\"early_stopping\":false,\"effect_estimate\":\"mean(candidate-A-minus-candidate-B-paired-battery-score)\",\"enumeration_count\":1024,\"extreme_comparison\":\"absolute-permuted-mean-greater-than-or-equal-to-absolute-observed-mean\",\"fresh_pairs_required\":10,\"incomplete_pair_policy\":\"retain-interrupted-evidence-but-do-not-count; repeat-the-same-pair-index-until-complete\",\"minimum_attainable_two_sided_p\":0.001953125,\"numerical_policy\":{\"permutation_extreme_comparison_tolerance_points\":1e-12,\"purpose\":\"Inclusive extremeness comparison guard only; it does not change score equality, alpha, or practical significance.\"},\"order_seed_inputs\":[\"confirmatory_contract_version\",\"profile_id\",\"cycle_id\",\"phase\",\"sorted_candidate_edpi_pair\"],\"order_sequence\":[\"A_then_B\",\"B_then_A\",\"B_then_A\",\"A_then_B\",\"A_then_B\",\"B_then_A\",\"B_then_A\",\"A_then_B\",\"A_then_B\",\"B_then_A\"],\"p_value_correction\":\"none-exhaustive-enumeration-includes-observed-assignment\",\"pairing\":\"same-four-mode-order-and-condition-seeds-within-pair\",\"power_claim\":\"none; fixed-n contract prioritizes exact-test resolution, balanced order, and bounded operator burden\",\"reuse_exploratory_data\":false,\"t_critical_df9\":2.2621571628540993,\"test\":\"exact-two-sided-paired-sign-flip-randomization-test-on-mean-score-difference\",\"unit\":\"paired-complete-protocol-battery-score\",\"zero_differences\":\"retain\"}",
+    "consistency_tier_cutpoints_json": "{\"battery_consistency_score\":\"arithmetic-mean-of-the-four-mode-normalized-consistency-utilities\",\"consistency_tier_version\":\"sc8-consistency-tier-v1\",\"consistency_tiers\":{\"A\":{\"maximum_exclusive\":0.8,\"minimum_inclusive\":0.6},\"B\":{\"maximum_exclusive\":0.6,\"minimum_inclusive\":0.4},\"C\":{\"maximum_exclusive\":0.4,\"minimum_inclusive\":0.2},\"D\":{\"maximum_exclusive\":0.2,\"minimum_inclusive\":0.0},\"S\":{\"maximum_inclusive\":1.0,\"minimum_inclusive\":0.8}},\"final_grade\":\"worse-of-reaction-tier-and-consistency-tier\",\"reaction_tiers_ms\":{\"A\":{\"maximum\":250.0,\"maximum_inclusive\":false,\"minimum\":200.0,\"minimum_inclusive\":true},\"B\":{\"maximum\":350.0,\"maximum_inclusive\":false,\"minimum\":250.0,\"minimum_inclusive\":true},\"C\":{\"maximum\":500.0,\"maximum_inclusive\":true,\"minimum\":350.0,\"minimum_inclusive\":true},\"D\":{\"maximum\":null,\"maximum_inclusive\":false,\"minimum\":500.0,\"minimum_inclusive\":false},\"S\":{\"maximum\":200.0,\"maximum_inclusive\":false,\"minimum\":null,\"minimum_inclusive\":false}},\"reaction_time_source\":\"flick-close-authoritative-mean-reaction-time\"}",
+    "created_date": "2026-07-15",
+    "cutoff_frequency_hz": 7.0,
+    "input_sampling_rate_hz": 1000.0,
+    "normalization_bounds_json": "{\"bound_basis\":{\"consistency_upper\":\"maximum sample SD for n bounded observations on [0, metric upper], used as a fixed scale anchor; raw SD is not clipped before normalization\",\"flick_close_precision_upper\":\"maximum accepted Close target-center offset (no-movement task-span anchor)\",\"flick_far_precision_upper\":\"maximum accepted Far target-center offset (no-movement task-span anchor)\",\"micro_precision_upper\":\"angular projection of the accepted 20 px maximum offset at the reference focal length\",\"percentage_bounds\":\"inherent mathematical bounds\",\"reaction_bounds\":\"accepted reaction tier/protocol timeout anchors\",\"tracking_deviation_upper\":\"accepted 15 degree maximum horizontal path amplitude\"},\"bounds\":{\"flick_close\":{\"accuracy_percent\":[0.0,100.0],\"consistency_sample_sd_deg\":[0.0,7.745966692414833],\"final_precision_error_deg\":[0.0,15.0],\"reaction_time_ms\":[100.0,500.0]},\"flick_far\":{\"accuracy_percent\":[0.0,100.0],\"consistency_sample_sd_deg\":[0.0,20.655911179772886],\"final_precision_error_deg\":[0.0,40.0],\"travel_time_ms\":[0.0,1500.0]},\"micro_correction\":{\"accuracy_percent\":[0.0,100.0],\"consistency_sample_sd_deg\":[0.0,0.7747494719478134],\"correction_time_ms\":[0.0,1500.0],\"final_precision_error_deg\":[0.0,1.500295901168436]},\"tracking\":{\"consistency_sample_sd_deg\":[0.0,7.570424080242598],\"time_on_target_percent\":[0.0,100.0],\"tracking_deviation_rms_deg\":[0.0,15.0]}},\"higher_is_better\":\"clamp((x-L)/(U-L),0,1)\",\"lower_is_better\":\"1-clamp((x-L)/(U-L),0,1)\",\"normalization_version\":\"sc8-normalization-v1\",\"scoring_zero_tolerance_points\":1e-09}",
+    "normalization_version": "sc8-normalization-v1",
+    "refractory_period_ms": 80.0,
+    "resampling_tolerance_ms": 0.5,
+    "scoring_zero_tolerance": 1e-09,
+    "signal_pipeline_version": "sc8-signal-pipeline-v1",
+    "submovement_bounds_by_mode_json": "{\"basis\":\"IEEE CoG 2022 Figure 8 reports completion-time analysis across counts 1 through 6; bounds are fixed scale anchors, not a claim that future counts cannot exceed 6\",\"bounds_by_mode\":{\"flick_close\":[1.0,6.0],\"flick_far\":[1.0,6.0],\"micro_correction\":[1.0,6.0]},\"mapping\":\"clamp((count-L)/(U-L),0,1)\",\"normalization_version\":\"sc8-normalization-v1\",\"zero_hit_submovement_policy\":\"raw-count-remains-null-and-component-penalty-is-1.0-fail-closed\"}",
+    "submovement_end_deg_per_sec": 4.0,
+    "submovement_start_deg_per_sec": 8.0,
+    "target_geometry_json": "{\"acceptance_method\":\"Deterministic Python projection gates, Unity EditMode parity, repeatability check, and reference-render visual inspection; no operator aim run required.\",\"accepted_date\":\"2026-07-15\",\"arena\":{\"center_world\":[0.0,1.6,9.5],\"checker_cell_world\":1.0,\"dimensions_world\":[20.0,12.0,21.0],\"enclosed\":true,\"lighting\":\"unlit-fixed\",\"shadows\":false},\"camera\":{\"far_clip_world\":100.0,\"horizontal_fov_deg\":103.0,\"near_clip_world\":0.01,\"position_world\":[0.0,1.6,0.0],\"projection\":\"perspective\",\"reference_focal_length_px\":763.6184800011154,\"rotation_deg\":[0.0,0.0,0.0],\"target_plane_distance_world\":10.0,\"vertical_fov_deg\":70.53280043291679},\"crosshair\":{\"diameter_px\":4.0,\"style\":\"filled-dot\",\"user_configurable_property\":\"color-only\"},\"evidence\":{\"candidate\":\"calibration/plans/p0-r4-geometry-candidate-v1.json\",\"candidate_sha256\":\"97a94f55ed5e101abc0a62b88a85df1623fd8a613220a33e0596dca46d61149a\",\"derived\":\"calibration/evidence/p0-r4/p0-r4-geometry-derived-v1.json\",\"derived_sha256\":\"3e57c186b1ef2aafb0caebe310b7bdb59fa09ace2bad9378c3a98364a7791e4f\",\"reference_render\":\"calibration/evidence/p0-r4/p0-r4-reference-render-v1.png\",\"reference_render_sha256\":\"f4f1b7d6bef8276dd8d7530a2efd866643d17a7819cdceec6fb671d0d59bf33d\",\"unity_editmode\":\"calibration/evidence/p0-r4/p0-r4-unity-editmode-results-v4.xml\",\"unity_editmode_sha256\":\"b1f81e9668b6cd54715ca707d5cc19d952efca4eedf49c8976b085711929aff9\",\"unity_version\":\"6000.5.3f1\"},\"flick_conditions\":{\"close_center_offset_deg\":[5.0,10.0,15.0],\"condition_count_per_family\":9,\"condition_policy\":\"full-cross-product-of-distance-and-target-size\",\"far_center_offset_deg\":[20.0,30.0,40.0],\"vertical_center_limit_deg\":25.0},\"frame_policy\":{\"adaptive_sync_required_off\":true,\"target_frame_rate_hz\":144,\"vsync_count\":0},\"micro_correction\":{\"maximum_center_offset_px\":20.0,\"maximum_world_offset\":0.26191092306437014,\"minimum_center_offset_px\":5.0,\"minimum_world_offset\":0.06547773076609253,\"target_size\":\"small\"},\"reference_viewport\":{\"aspect_ratio\":1.7777777777777777,\"height_px\":1080,\"non_16_9_policy\":\"letterbox-fixed-16-9-test-viewport\",\"width_px\":1920},\"spawn_safety\":{\"edge_margin_px\":32.0,\"hud_reserved_top_px\":64.0,\"require_full_target_inside_safe_viewport\":true,\"require_no_hud_overlap\":true},\"status\":\"accepted\",\"target\":{\"center_hit_area_ratio\":0.25,\"center_hit_radius_ratio\":0.5,\"color_hex\":\"#00FFFF\",\"shape\":\"sphere\",\"sizes\":{\"large\":{\"angular_diameter_deg\":2.25,\"reference_pixel_diameter\":29.99108185366915,\"world_diameter\":0.3927495554275395},\"medium\":{\"angular_diameter_deg\":1.5,\"reference_pixel_diameter\":19.992626964892803,\"world_diameter\":0.26181434169670176},\"small\":{\"angular_diameter_deg\":0.75,\"reference_pixel_diameter\":9.995885259889453,\"world_diameter\":0.13090156304068037}}},\"test_geometry_version\":\"sc8-test-geometry-v1\",\"visual_review\":{\"checks\":[\"checkerboard room is enclosed and distraction-free\",\"cyan targets remain distinct against both checker colors\",\"all displayed target edges remain inside the green safe-viewport guide\",\"top HUD reserve is clear\",\"fixed four-pixel crosshair is visible and does not obscure the medium target\",\"no shadows, clipping, decorative geometry, or target/HUD overlap is visible\"],\"result\":\"passed\"}}",
+    "test_geometry_version": "sc8-test-geometry-v1",
+    "timing_acceptance_policy": "integrity-modal-cadence",
+    "tracking_contract_json": "{\"acceptance_method\":\"Deterministic Butterworth/SOS derivation, forward-backward response fixtures, explicit threshold/refractory boundary tests, balanced mode-contract derivation, interval-weighted Tracking invariance, and Unity EditMode parity; no additional operator polling run required.\",\"accepted_date\":\"2026-07-15\",\"contract_id\":\"sc8-p0-r5-signal-mode-contract-v1\",\"dependencies\":{\"test_geometry_version\":\"sc8-test-geometry-v1\",\"timing_contract_id\":\"sc8-p0-r3-timing-contract-v1\"},\"evidence\":{\"candidate\":\"calibration/plans/p0-r5-signal-mode-candidate-v1.json\",\"candidate_sha256\":\"12d20a6f7a071d1571670c93e23af25f492614337af7dc6fdc1ff0db2135ac55\",\"derived\":\"calibration/evidence/p0-r5/p0-r5-signal-mode-derived-v1.json\",\"derived_sha256\":\"be64032e2f9f772cac84ef8c28235337ca0e8e75b1f0cbb87d3b359bb0ca3cda\",\"geometry_contract_sha256\":\"bf0a0d1024b5aa4dcdeae924e4b0de0444e6e2dc722a35c6fb7a87da4ccd8622\",\"numpy_version\":\"2.3.5\",\"python_runtime\":\"3.12.13\",\"scipy_runtime_dependency\":\"none-canonical-sos-derived-and-tested-in-project\",\"timing_contract_sha256\":\"a60785d26869a54c89918d28189ce8f8ad4fcccd23ffdd7e94959a207be5ad56\",\"unity_editmode\":\"calibration/evidence/p0-r5/p0-r5-unity-editmode-results-v1.xml\",\"unity_editmode_sha256\":\"7360e8fa19f607a57a96ff686788389c0456f9a886f3be922cbb3e8f3b4305e7\",\"unity_version\":\"6000.5.3f1\"},\"mode_contract_version\":\"sc8-mode-contract-v1\",\"modes\":{\"flick_close\":{\"activation\":\"hidden-target-after-deterministic-random-foreperiod\",\"center_offsets_deg\":[5.0,10.0,15.0],\"foreperiod_ms\":{\"maximum\":1000.0,\"minimum\":500.0},\"metric_clock\":\"target-visible-to-click-or-timeout\",\"primary_metrics\":[\"reaction_time_ms\",\"signed_overflick_underflick_deg\",\"final_precision_error_deg\"],\"target_sizes\":[\"small\",\"medium\",\"large\"]},\"flick_far\":{\"activation\":\"center-reference-click-activates-visible-preview-target\",\"center_offsets_deg\":[20.0,30.0,40.0],\"missing_onset_policy\":\"travel-time-null-and-trial-retained-as-miss-or-data-quality-review\",\"primary_metrics\":[\"travel_time_ms\",\"final_precision_error_deg\"],\"reaction_time_definition\":\"activation-to-first-8-deg-per-sec-movement-onset\",\"target_sizes\":[\"small\",\"medium\",\"large\"],\"travel_time_definition\":\"first-movement-onset-to-click\"},\"micro_correction\":{\"activation\":\"center-reference-click-activates-visible-preview-target\",\"offset_px\":{\"maximum\":20.0,\"minimum\":5.0},\"offset_sampling\":\"deterministic-uniform-radius-and-direction\",\"primary_metrics\":[\"micro_adjustment_count\",\"final_precision_error_deg\",\"submovement_count\"],\"target_size\":\"small\",\"target_size_exception_basis\":\"specific-mode-requirement-and-accepted-sc8-test-geometry-v1\"},\"tracking\":{\"adaptation_blocks\":1,\"blocks\":2,\"completion\":\"all-18-trials-complete-with-monotonic-boundary-covering-timestamps-and-analytic-target-state\",\"consistency_input\":\"sample-standard-deviation-of-post-adaptation-window-tracking-deviation\",\"curved\":{\"derived_speed_range_deg_per_sec\":[10.471975511965978,15.707963267948966],\"horizontal_radius_deg\":15.0,\"period_seconds\":6.0,\"vertical_radius_deg\":10.0},\"linear\":{\"constant_speed_deg_per_sec\":15.0,\"derived_round_trip_period_seconds\":4.0,\"horizontal_half_range_deg\":15.0,\"vertical_offset_deg\":0.0},\"metric_window_seconds\":1.0,\"path_evaluation\":\"analytic-from-high-resolution-elapsed-time-not-frame-integrated\",\"patterns\":[\"linear\",\"curved\",\"variable_speed\"],\"post_adaptation_metric_windows\":54,\"post_adaptation_trials\":9,\"target_sizes\":[\"small\",\"medium\",\"large\"],\"time_on_target_definition\":\"interval-weighted-percentage-with-radial-error-not-greater-than-target-angular-radius\",\"total_trials\":18,\"tracking_deviation_definition\":\"interval-weighted-rms-radial-center-error-degrees-per-one-second-window\",\"trial_duration_seconds\":6.0,\"trials_per_block\":9,\"variable_speed\":{\"derived_speed_range_deg_per_sec\":[0.0,23.561944901923447],\"horizontal_amplitude_deg\":15.0,\"path\":\"x-equals-amplitude-times-sine-two-pi-t-over-period-y-equals-zero\",\"period_seconds\":4.0},\"window_boundary_policy\":\"clip-sample-intervals-to-six-exact-half-open-one-second-windows\"}},\"sequence_policy\":{\"generator\":\"deterministic-versioned-seed\",\"same_condition_sequence_across_sensitivity_candidates\":true,\"seed_excludes\":[\"sensitivity_value\",\"blind_candidate_label\"],\"seed_includes\":[\"mode_contract_version\",\"profile_id\",\"cycle_id\",\"phase\",\"mode\",\"battery_repetition_ordinal\"],\"shot_condition_balance\":\"three-complete-nine-condition-blocks-plus-three-rotating-conditions\",\"tracking_condition_balance\":\"one-complete-pattern-by-size-block-before-and-after-adaptation\"},\"session_acceptance\":{\"diagnostic_only\":[\"receipt-burst-fraction\",\"receipt-gap-fraction\",\"render-frame-interval-distribution\"],\"required\":[\"immutable-timing-geometry-signal-and-mode-version-identity\",\"native-borderless-fullscreen-state-unchanged\",\"focus-and-display-state-unchanged\",\"strictly-increasing-high-resolution-event-timestamps\",\"timing-contract-integrity-modal-cadence-pass\",\"raw-evidence-preserved-separately-from-derived-data\",\"deterministic-condition-sequence-reproducible-from-seed\",\"mode-specific-completion-contract-pass\",\"adaptation-flags-finalized-after-session\"]},\"shared_shot_contract\":{\"adaptation_fraction\":0.5,\"adaptation_trials_at_minimum\":15,\"hit_submovement_requirement\":\"every-post-adaptation-hit-must-have-an-eligible-signal-segment\",\"minimum_resolved_trials\":30,\"miss_submovement_policy\":\"store-null-with-outcome-reason-do-not-treat-as-zero-penalty\",\"post_adaptation_trials_at_minimum\":15,\"single_click_per_trial\":true,\"timeout_outcome\":\"miss\",\"trial_timeout_seconds\":1.5},\"signal_pipeline\":{\"angular_velocity_method\":\"first-difference-euclidean-magnitude\",\"application\":\"forward-backward-offline\",\"cutoff_frequency_hz\":7.0,\"end_boundary\":\"strictly-less-than\",\"end_threshold_deg_per_sec\":4.0,\"filter_axes\":[\"azimuth_deg\",\"elevation_deg\"],\"filter_family\":\"butterworth-lowpass\",\"filter_order\":5,\"gap_policy\":\"split-before-filtering-never-bridge\",\"minimum_filterable_segment_samples\":20,\"pad_length_samples\":18,\"pad_type\":\"odd\",\"refractory_period_ms\":80.0,\"refractory_rule\":\"merge-when-next-onset-minus-previous-end-is-less-than-80-ms\",\"representation\":\"second-order-sections\",\"sampling_rate_hz\":1000.0,\"short_segment_policy\":\"retain-raw-mark-signal-ineligible-no-one-pass-fallback\",\"sos\":[[4.793801754376094e-09,4.793801754376094e-09,0.0,1.0,-0.9569573219226812,0.0],[1.0,2.0,1.0,1.0,-1.9294340574583,0.9313017524091318],[1.0,2.0,1.0,1.0,-1.9712822627176634,0.9731904667915525]],\"start_boundary\":\"greater-than-or-equal\",\"start_threshold_deg_per_sec\":8.0,\"verified_response\":{\"dc_gain\":1.0,\"forward_backward_gain_at_7_hz\":0.5000000000000835,\"impulse_peak_displacement_samples\":0,\"single_pass_gain_at_7_hz\":0.7071067811866065}},\"signal_pipeline_version\":\"sc8-signal-pipeline-v1\",\"status\":\"accepted\"}"
+  },
+  "config_version": "calibration_config_v1",
+  "confirmatory_contract_version": "sc8-confirmatory-v1",
+  "consistency_tier_version": "sc8-consistency-tier-v1",
+  "contract_id": "sc8-calibration-config-v1",
+  "created_date": "2026-07-15",
+  "database_json_serialization": "utf8-canonical-json-sorted-keys-compact-no-nan",
+  "formula_contract": {
+    "component_aggregation": {
+      "accuracy": "100-times-hits-divided-by-15; miss-clicks-and-timeouts-are-misses",
+      "authoritative_shot_observations": 15,
+      "authoritative_tracking_windows": 54,
+      "consistency_shot": "sample-sd-of-15-final-precision-error-values",
+      "consistency_tracking": "sample-sd-of-54-window-tracking-deviation-values",
+      "flick_close_reaction": "mean-target-visible-to-click-or-timeout; timeout contributes 1500 ms and clamps to zero utility",
+      "flick_far_reaction": "mean-movement-onset-to-click travel time; missing onset contributes 1500 ms for scoring while raw travel time remains null",
+      "incomplete_data_policy": "reject-mode-score-if-any-required-authoritative-value-is-missing-for-a-reason-other-than-the-explicit-far-missing-onset-or-zero-hit-fallback",
+      "micro_reaction": "mean-reference-activation-to-click-or-timeout correction time",
+      "precision": "lower-is-better-normalization-of-mean-final-precision-error-over-all-15-resolved-opportunities",
+      "submovement": "mean-count-across-authoritative-hits-only; every hit must be signal-eligible",
+      "tracking_precision": "lower-is-better-normalization-of-mean-of-54-window-deviations",
+      "tracking_time_on_target": "arithmetic-mean-of-54-equal-one-second-window-percentages",
+      "zero_hit_submovement_policy": "raw-count-remains-null-and-component-penalty-is-1.0-fail-closed"
+    },
+    "formula": {
+      "battery_aggregation": "unweighted-arithmetic-mean-of-four-complete-mode-scores",
+      "final_score_clamp": null,
+      "multiplier": 100.0,
+      "shot_mode_weights": {
+        "accuracy": 0.3,
+        "consistency": 0.35,
+        "precision": 0.15,
+        "reaction_speed": 0.2,
+        "submovement_penalty_subtracted": 0.1
+      },
+      "theoretical_shot_score_range": [
+        -10.0,
+        100.0
+      ],
+      "theoretical_tracking_score_range": [
+        0.0,
+        100.0
+      ],
+      "tracking_weights": {
+        "consistency": 0.4375,
+        "precision": 0.1875,
+        "time_on_target": 0.375
+      }
+    },
+    "formula_version": "sc8-performance-score-v1"
+  },
+  "formula_version": "sc8-performance-score-v1",
+  "immutable": true,
+  "limitations": {
+    "production_safeguards": [
+      "Hardware DPI and current in-game sensitivity remain validated user inputs.",
+      "Configured polling rate is user-entered supporting metadata.",
+      "Actual raw-event cadence is measured and stored per session.",
+      "Duplicate or reversed timestamps are rejected.",
+      "The nominal cadence must remain the modal interval class.",
+      "Raw evidence is preserved and resampling never bridges detected gaps."
+    ],
+    "scientific_limitation": "This waiver does not convert either failed strict confirmation into a statistical pass and does not claim universal 1000 Hz physical delivery. Windows WM_INPUT receipt bursts remain visible diagnostics.",
+    "strict_candidate_v1_disposition": "rejected",
+    "strict_candidate_v2_disposition": "rejected",
+    "strict_timing_confirmation_passed": false,
+    "timing_acceptance": "accepted-by-project-owner-calibration-waiver"
+  },
+  "mode_contract_version": "sc8-mode-contract-v1",
+  "source_contracts": [
+    {
+      "path": "calibration/plans/p0-r3-timing-contract-accepted-v1.json",
+      "role": "timing",
+      "sha256": "a60785d26869a54c89918d28189ce8f8ad4fcccd23ffdd7e94959a207be5ad56"
+    },
+    {
+      "path": "calibration/evidence/p0-r3/p0-r3-owner-waiver-closure.json",
+      "role": "timing_owner_waiver",
+      "sha256": "84ab17a9d30857cd41b8f336bbcaa61e1c0f2550fb0ca0f8c07e307a13b33903"
+    },
+    {
+      "path": "calibration/plans/p0-r4-geometry-accepted-v1.json",
+      "role": "geometry",
+      "sha256": "bf0a0d1024b5aa4dcdeae924e4b0de0444e6e2dc722a35c6fb7a87da4ccd8622"
+    },
+    {
+      "path": "calibration/plans/p0-r5-signal-mode-accepted-v1.json",
+      "role": "signal_mode",
+      "sha256": "c767abeb0022a10da5146f1f049916e4d45bfd04733b679a07933da2467adbd4"
+    },
+    {
+      "path": "calibration/plans/p0-r6-scoring-statistics-accepted-v1.json",
+      "role": "scoring_statistics_acceptance",
+      "sha256": "c34b3bb14b304b8ba4b674ac11561489745865d89f549c50a64ef451ffc03009"
+    },
+    {
+      "path": "calibration/plans/p0-r6-scoring-statistics-candidate-v1.json",
+      "role": "scoring_statistics_payload",
+      "sha256": "10ac7a5adb91261e4e5b16cec191d3cd5cdd9b3868ab01197aa37c561df081b2"
+    }
+  ],
+  "status": "accepted"
+}

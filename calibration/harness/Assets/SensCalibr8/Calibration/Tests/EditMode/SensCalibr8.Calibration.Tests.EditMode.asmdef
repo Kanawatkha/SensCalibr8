@@ -1,0 +1,22 @@
+{
+  "name": "SensCalibr8.Calibration.Tests.EditMode",
+  "rootNamespace": "SensCalibr8.Calibration.Tests",
+  "references": [
+    "SensCalibr8.Calibration.Runtime",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

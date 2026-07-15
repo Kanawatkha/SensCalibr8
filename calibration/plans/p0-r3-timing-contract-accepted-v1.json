@@ -1,0 +1,33 @@
+{
+  "contract_id": "sc8-p0-r3-timing-contract-v1",
+  "signal_pipeline_version": "sc8-signal-pipeline-timing-v1",
+  "status": "accepted",
+  "input_sampling_rate_hz": 1000.0,
+  "resampling_tolerance_ms": 0.5,
+  "filter_padlen_samples": 18,
+  "acceptance_policy": "integrity-modal-cadence",
+  "confirmation_required_run_count": 5,
+  "pilot_source_run_ids": [
+    "20260715t0630447749738z-r1",
+    "20260715t0631193280677z-r2",
+    "20260715t0631538304273z-r3",
+    "20260715t0632258767104z-r4",
+    "20260715t0632592526448z-r5"
+  ],
+  "acceptance_basis": "Project-owner calibration waiver on 2026-07-15 after Pilot v3 and two fresh five-run confirmation sets. Strict distribution envelopes remain recorded as rejected; no claim is made that either strict candidate passed.",
+  "policy_rules": [
+    "Input-event timestamps must be strictly increasing.",
+    "The nominal one-cadence class must be the modal positive-interval class.",
+    "The median interval must map to the nominal one-cadence class.",
+    "The p99 residual of single-cadence intervals must remain within the half-cadence partition boundary.",
+    "Receipt bursts and missing-cadence gaps are retained as diagnostics rather than automatic rejection; gaps split resampling segments and are never interpolated across.",
+    "Production records user-configured polling rate as metadata and measures actual cadence for every session."
+  ],
+  "evidence": {
+    "pilot_v3": "calibration/evidence/p0-r3/pilot-v3/p0-r3-pilot-v3-aggregate-v2.json",
+    "rejected_confirmation_v3": "calibration/evidence/p0-r3/confirmation-v3/p0-r3-confirmation-v3-result.json",
+    "rejected_confirmation_v4": "calibration/evidence/p0-r3/confirmation-v4/p0-r3-confirmation-v4-result.json",
+    "owner_waiver_decision": "calibration/evidence/p0-r3/p0-r3-owner-waiver-closure.json"
+  },
+  "filter_padlen_basis": "The approved fifth-order Butterworth design has three SOS sections and one first-order section. Applying the documented scipy.signal.sosfiltfilt default-padlen structure formula yields 18 samples; P0-R5 must verify this against the generated coefficients."
+}

@@ -26,6 +26,7 @@ During profile creation, the user provides:
 
 - Hardware DPI (manually entered, or derived via the Physical Ruler Test fallback described in `CONTEXT.md`)
 - Current in-game sensitivity, stored for comparison with the calculated PSA baseline
+- Configured mouse polling rate in Hz, entered by the user as supporting session metadata; it does not replace automatic cadence measurement
 - Dominant hand
 - Crosshair color (selected once during profile creation and locked for the lifetime of the profile — see Section 2.2 below). Dot style and dot size are fixed by the application and are not user-configurable.
 - Grip style (Fingertip / Palm / Claw / Hybrid) — descriptive field only, stored for the user's own reference, never used in any calculation
@@ -47,14 +48,14 @@ The testing system consists of four modes. Each mode measures a distinct dimensi
 
 | # | Mode | Description | Primary Metric | Research Basis |
 |---|---|---|---|---|
-| 1 | Flick — Close Range | Targets spawn around a central point at close distance, high spawn frequency (Aim Lab style) | Reaction Time, Overflick/Underflick | High sensitivity favors flicky entry players |
-| 2 | Flick — Far Range | Targets spawn far apart in both time and position | Travel Time (isolated from Reaction Time) | Low sensitivity favors methodical/precision aimers |
-| 3 | Tracking | Continuously moving target (3 patterns: linear / curved / variable-speed) | Time-on-Target %, Tracking Deviation (SD) | Grip Tension 60-80% concept (see `RESEARCH.md`, Section 14) |
+| 1 | Flick — Close Range | Hidden targets activate after a calibrated randomized foreperiod at Close offsets | Reaction Time, Overflick/Underflick | High sensitivity favors flicky entry players |
+| 2 | Flick — Far Range | Center-reference activation starts a previewed Far target; movement onset separates Reaction from Travel | Travel Time (isolated from Reaction Time) | Low sensitivity favors methodical/precision aimers |
+| 3 | Tracking | Continuously moving target (3 calibrated analytic patterns: linear / curved / variable-speed) | Time-on-Target %, Tracking Deviation (RMS window metric; SD across windows supplies Consistency) | Grip Tension 60-80% concept (see `RESEARCH.md`, Section 14) |
 | 4 | Micro-Correction | Stationary, small-sized target near current crosshair position (5-20 px offset; see `RESEARCH.md`, Section 13) | Micro-Adjustment Count, Final Precision Error, Submovement Count | PSA Method "natural feel" concept + Submovement Analysis |
 
 ### 2.1 Target Size Variation (Fitts's Law Compliance)
 
-Every mode must randomize target size (Small / Medium / Large) together with distance — distance alone must never be the only varied parameter. This is required to comply with Fitts's Law, which defines the Index of Difficulty from both distance and target size jointly (see `RESEARCH.md`, Section 10).
+Close Flick and Far Flick must vary Small / Medium / Large together with distance — distance alone must never be the only varied parameter. Tracking crosses all three target sizes with all three path patterns in each balanced block. Micro-Correction is the explicit exception: its dedicated mode requirement and accepted `sc8-test-geometry-v1` contract fix the target to Small while randomizing radial/directional offset within 5-20 px. This exception prevents the precision task from silently changing scale and resolves the earlier generic-versus-specific wording. See `RESEARCH.md`, Sections 10 and 17.7.
 
 ### 2.2 Crosshair Consistency
 
@@ -68,9 +69,23 @@ For shot-based modes, Final Precision Error is inverted and normalized into the 
 
 Every component uses the fixed versioned normalization in `RESEARCH.md`, Section 4.2. Bounds must come from the active Phase 0 calibration configuration and must never be recomputed from the currently displayed profiles, sessions, or candidate values.
 
+Accepted scoring contract `sc8-p0-r6-scoring-statistics-contract-v1` fixes the complete aggregation and missing-value behavior. Each shot mode uses 15 authoritative resolved opportunities; Tracking uses 54 authoritative one-second windows. A battery score is the unweighted arithmetic mean of four complete mode scores. The shot formula is not final-clamped and retains its documented theoretical -10 to 100 range; Tracking ranges 0 to 100. A zero-hit shot mode retains null raw Submovement Count and fails closed at component penalty 1.0, never a favorable zero. See `RESEARCH.md`, Section 4.4.
+
 ### 2.4 Reproducible Test Geometry
 
-All production tests use fixed world geometry with locked FOV, camera configuration, and Target Frame Rate. Concrete target sizes, distances, spawn frequency, Tracking speed/duration, arena dimensions, center-hit zone, and frame-rate value must be measured and versioned during Phase 0: Signal Calibration before the Test Engine is implemented.
+All production tests use accepted geometry version `sc8-test-geometry-v1`: a fixed 16:9 test viewport (letterboxed on other aspect ratios), 103-degree horizontal perspective FOV, 10-world-unit target plane, 20 x 12 x 21 enclosed arena, 144 Hz reference frame policy, and cyan spheres sized 0.75/1.50/2.25 degrees. Close and Far modes use the complete size cross-product with center offsets 5/10/15 degrees and 20/30/40 degrees respectively. The fixed four-pixel dot crosshair and 50%-of-target-radius Center-Hit diagnostic are also part of this immutable contract. See `RESEARCH.md`, Section 17.5, and `calibration/plans/p0-r4-geometry-accepted-v1.json` for authoritative values.
+
+Spawn timing, Tracking speed/duration/trial behavior, and signal response are frozen under `sc8-mode-contract-v1` and `sc8-signal-pipeline-v1`; see `RESEARCH.md`, Sections 5 and 17.7, and `calibration/plans/p0-r5-signal-mode-accepted-v1.json`. Production must load these versioned contracts and must not duplicate their numbers as mode-local magic constants.
+
+All production features consume these values through the single accepted `calibration_config_v1` artifact described in `RESEARCH.md`, Section 18. Loading is fail-closed: draft, incomplete, edited, hash-mismatched, or internally inconsistent configuration data must prevent a test session from starting. A future change creates a new version and never mutates historical results.
+
+### 2.5 Input-Timing Compatibility
+
+- Hardware DPI remains a required manual profile input (or Physical Ruler Test result). Mouse manufacturer, model, and firmware are optional audit/troubleshooting metadata and must never block normal setup or alter sensitivity calculations.
+- Before each production session, copy the user's configured polling-rate value into the session record, measure the actual raw input-event cadence automatically, and store versioned timing diagnostics. Configured/advertised polling rate is supporting metadata only.
+- Validate strict timestamp ordering and nominal modal cadence against the active timing contract before Submovement analysis. Receipt bursts and gaps are diagnostic rather than automatic rejection, but detected gaps must split the resampling trace. Never assume that all mice report at the configured rate.
+- Resample accepted traces onto the canonical processing grid stored by the active `signal_pipeline_version`.
+- Menu screens may run windowed, but every acceptance-bearing test session enters the frozen native borderless-fullscreen test state automatically and returns to the prior windowed state afterward.
 
 ---
 
@@ -78,7 +93,7 @@ All production tests use fixed world geometry with locked FOV, camera configurat
 
 ### 3.1 Step 0 — Initial Setup
 
-- The user enters Hardware DPI (or uses the Physical Ruler Test if unknown) and their current in-game sensitivity.
+- The user enters Hardware DPI (or uses the Physical Ruler Test if unknown), current in-game sensitivity, and configured mouse polling rate in Hz.
 - The user completes the Physical Profile fields described in Section 1.2 above.
 - The system calculates the PSA Baseline (see `RESEARCH.md`, Section 2) and compares it against the user's current value, along with Mousepad Constraint Validation.
 
@@ -88,9 +103,9 @@ The number of values and minimum sample size are defined in `RESEARCH.md`, Secti
 
 - **Candidate values:** PSA baseline at 0%, plus symmetric +/-5%, +/-10%, and +/-20% offsets (seven values total).
 - **Counterbalancing:** randomize the test order of all 7 values to prevent order effects.
-- **Minimum sample:** at least 30 shots per sensitivity value separately for each shot-based mode. Tracking uses a distinct duration/trial-based contract that must be calibrated in Phase 0; samples are never pooled across modes.
+- **Minimum sample:** at least 30 resolved opportunities per sensitivity value separately for each shot-based mode. Under the minimum contract, exactly 15 are adaptation and 15 are authoritative. Tracking uses two balanced 9-trial blocks at 6 seconds per trial; the first block is adaptation and the second produces 54 authoritative 1-second metric windows. Samples are never pooled across modes.
 - **Blind testing:** the numeric sensitivity value must never be displayed to the user during testing, to prevent placebo effects from influencing performance.
-- **Winner selection:** use exploratory Performance Score to identify the top 2, then collect fresh matched confirmatory blocks and run the two-sided paired randomization/permutation test at `alpha = 0.05` defined in `RESEARCH.md`, Section 11.1.
+- **Winner selection:** use exploratory Performance Score to identify the top 2, then collect exactly 10 fresh matched complete-battery pairs, counterbalanced five A-first/five B-first, and run the exhaustive 1024-assignment two-sided paired randomization/permutation test at `alpha = 0.05` defined in `RESEARCH.md`, Section 11.1.
 - **Tie behavior:** if the top-2 difference is not statistically significant, declare a statistical tie and carry both anchors into the Phase 2 union/deduplication rule; never force a Phase 1 Winner from the p-value alone.
 - **Adaptation Period:** discard the first 50% of shots recorded per tested value before computing any metric (see `RESEARCH.md`, Section 8). This is not a fixed shot count — it scales with the actual number of shots recorded for that value.
 
@@ -106,7 +121,7 @@ The narrowing range, session limits, and stabilization threshold are defined in 
 - With one Phase 1 Winner, test the Winner, Winner+10%, and Winner-10%.
 - With two statistically tied Phase 1 anchors, generate the union of each anchor at -10%, 0%, and +10%, apply the eDPI floor, then deduplicate final eDPI values. Preserve every anchor/offset provenance record when multiple sources collapse to one candidate (see `RESEARCH.md`, Section 11.2).
 - Minimum 5 complete Protocol Batteries per value (equivalent to 5 Database Sessions per mode).
-- Condition for concluding: the coefficient of variation of Performance Score across complete Protocol Batteries must be below 10% before a result is finalized. A zero or numerically near-zero mean is undefined and does not pass stabilization. Up to 10 complete batteries may be run per value if the result has not stabilized within 5.
+- Condition for concluding: the coefficient of variation of Performance Score across complete Protocol Batteries must be below 10% before a result is finalized. Under `sc8-normalization-v1`, `abs(mean score) <= 1e-9` is undefined and does not pass stabilization. Up to 10 complete batteries may be run per value if the result has not stabilized within 5.
 
 ### 3.4 Phase 3 — Final Narrowing (+/- 5%)
 
@@ -125,7 +140,7 @@ Apply adaptation first, then evaluate the 3-SD rule within the metric-specific h
 
 ### 3.5 Step 4 — Performance Gate Check
 
-Evaluate the preliminary Best Sensitivity using Reaction Time and Consistency to assign separate tiers, then use the worse tier as the final Grade (S/A/B/C/D; see `RESEARCH.md`, Sections 6 and 17.3). If the Grade is low, the system must recommend additional practice at that value rather than concluding that the sensitivity value itself is the problem. Do not immediately trigger a re-test of other values on a single low Grade result.
+Evaluate the preliminary Best Sensitivity using authoritative Close Flick mean Reaction Time and the arithmetic mean of all four normalized mode Consistency utilities. Assign Consistency S/A/B/C/D using fixed utility boundaries 0.8/0.6/0.4/0.2, then use the worse of Reaction and Consistency tiers as the final Grade (see `RESEARCH.md`, Sections 6 and 17.3). If the Grade is low, the system must recommend additional practice at that value rather than concluding that the sensitivity value itself is the problem. Do not immediately trigger a re-test of other values on a single low Grade result.
 
 ### 3.6 Continuous Improvement Cycle
 

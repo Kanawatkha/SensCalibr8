@@ -86,6 +86,7 @@ profiles (
     created_date TEXT NOT NULL,
     mouse_dpi INTEGER NOT NULL,
     current_sensitivity REAL NOT NULL,
+    configured_polling_rate_hz REAL NOT NULL,
     dominant_hand TEXT NOT NULL,
     crosshair_config TEXT NOT NULL, -- user-selected color only; dot style and size are application-fixed
     grip_style TEXT NOT NULL,       -- Fingertip / Palm / Claw / Hybrid (descriptive only, see CONTEXT.md)
@@ -106,8 +107,9 @@ calibration_configs (
     signal_pipeline_version TEXT NOT NULL UNIQUE,
     test_geometry_version TEXT NOT NULL UNIQUE,
     created_date TEXT NOT NULL,
-    input_sampling_rate_hz REAL NOT NULL,
+    input_sampling_rate_hz REAL NOT NULL, -- canonical uniform processing-grid rate; never assumed to equal every physical mouse's event rate
     resampling_tolerance_ms REAL NOT NULL,
+    timing_acceptance_policy TEXT NOT NULL,
     butterworth_order INTEGER NOT NULL,
     cutoff_frequency_hz REAL NOT NULL,
     submovement_start_deg_per_sec REAL NOT NULL,
@@ -178,6 +180,27 @@ sessions (
     UNIQUE (battery_id, mode)
 )
 
+session_timing_diagnostics (
+    id INTEGER PRIMARY KEY,
+    session_id INTEGER NOT NULL UNIQUE REFERENCES sessions(id) ON DELETE CASCADE,
+    signal_pipeline_version TEXT NOT NULL,
+    input_device_identity TEXT NOT NULL,
+    configured_polling_rate_hz REAL NOT NULL,
+    measured_event_rate_hz REAL NOT NULL,
+    median_interval_ms REAL NOT NULL,
+    interval_mad_ms REAL NOT NULL,
+    p95_interval_ms REAL NOT NULL,
+    p99_interval_ms REAL NOT NULL,
+    duplicate_timestamp_count INTEGER NOT NULL,
+    reverse_timestamp_count INTEGER NOT NULL,
+    burst_interval_count INTEGER NOT NULL,
+    single_cadence_interval_count INTEGER NOT NULL,
+    gap_interval_count INTEGER NOT NULL,
+    p99_single_cadence_residual_ms REAL NOT NULL,
+    timing_contract_passed BOOLEAN NOT NULL,
+    disposition_reason TEXT NOT NULL
+)
+
 shots (
     id INTEGER PRIMARY KEY,
     session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
@@ -188,17 +211,20 @@ shots (
     spawn_position TEXT NOT NULL,
     spawn_timestamp REAL NOT NULL,
     first_mouse_movement_timestamp REAL,
+    resolution_timestamp REAL NOT NULL,
     hit_timestamp REAL,
     hit_position TEXT,
     is_hit BOOLEAN NOT NULL,
+    outcome_reason TEXT NOT NULL CHECK (outcome_reason IN ('hit', 'miss_click', 'timeout')),
+    final_aim_position TEXT NOT NULL,
     is_outlier BOOLEAN,
     is_adaptation_shot BOOLEAN,     -- NULL while active; finalized after the session ends (see Schema Notes)
     sensitivity_value REAL NOT NULL,
     initial_offset_distance REAL NOT NULL,
     micro_adjustment_count INTEGER,
     submovement_count INTEGER,       -- computed per algorithm in RESEARCH.md, Section 5
-    final_precision_error REAL,
-    is_center_hit BOOLEAN             -- diagnostic only; never enters Performance Score directly
+    final_precision_error REAL NOT NULL,
+    is_center_hit BOOLEAN NOT NULL    -- diagnostic only; never enters Performance Score directly
 )
 
 tracking_data (
@@ -206,12 +232,30 @@ tracking_data (
     session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
     profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     sensitivity_value REAL NOT NULL,
+    trial_index INTEGER NOT NULL,
+    block_index INTEGER NOT NULL,
+    is_adaptation_trial BOOLEAN,    -- NULL while active; finalized after session completion
     pattern_type TEXT NOT NULL,      -- linear / curved / variable-speed
-    target_speed REAL NOT NULL,
+    target_size TEXT NOT NULL,       -- small / medium / large; balanced once per pattern per block
+    path_contract_id TEXT NOT NULL,
+    path_parameters_json TEXT NOT NULL,
     duration_ms INTEGER NOT NULL,
     deviation_samples TEXT NOT NULL,
-    time_on_target_ms INTEGER NOT NULL,
-    time_on_target_percentage REAL NOT NULL
+    time_on_target_ms REAL NOT NULL,
+    time_on_target_percentage REAL NOT NULL,
+    UNIQUE (session_id, trial_index)
+)
+
+tracking_windows (
+    id INTEGER PRIMARY KEY,
+    tracking_trial_id INTEGER NOT NULL REFERENCES tracking_data(id) ON DELETE CASCADE,
+    window_index INTEGER NOT NULL,
+    window_start_ms INTEGER NOT NULL,
+    window_end_ms INTEGER NOT NULL,
+    time_on_target_ms REAL NOT NULL,
+    time_on_target_percentage REAL NOT NULL,
+    tracking_deviation_rms_deg REAL NOT NULL,
+    UNIQUE (tracking_trial_id, window_index)
 )
 
 mouse_samples (
@@ -287,6 +331,9 @@ significance_test_pairs (
     id INTEGER PRIMARY KEY,
     significance_test_id INTEGER NOT NULL REFERENCES significance_tests(id) ON DELETE CASCADE,
     pair_index INTEGER NOT NULL,
+    first_candidate TEXT NOT NULL CHECK (first_candidate IN ('A', 'B')),
+    pairing_seed TEXT NOT NULL,
+    matched_condition_key TEXT NOT NULL,
     candidate_a_battery_id INTEGER NOT NULL REFERENCES protocol_batteries(id) ON DELETE CASCADE,
     candidate_b_battery_id INTEGER NOT NULL REFERENCES protocol_batteries(id) ON DELETE CASCADE,
     candidate_a_score REAL NOT NULL,
@@ -317,7 +364,8 @@ injury_risk_flags (
 
 - `grip_style`, `movement_strategy`, `ads_multiplier` are descriptive/reference fields only. They must never be read by any Performance Score calculation or used to bias results (see `CONTEXT.md`, Out of Scope).
 - `current_sensitivity` stores the user's current Valorant sensitivity entered during profile setup so that Step 0 can compare it with the PSA baseline.
-- `calibration_configs` is immutable after first use. Phase 0 must populate every field from validated measurements; production sessions cannot reference an incomplete or draft configuration. The fixed signal constants must match `RESEARCH.md`, Section 5, while measured sampling, tolerance, bounds, tier cutpoints, geometry, Tracking, and confirmatory contracts are versioned outputs of Phase 0.
+- `calibration_configs` is immutable after first use. Phase 0 must populate every field from validated measurements; production sessions cannot reference an incomplete or draft configuration. The fixed signal constants must match `RESEARCH.md`, Section 5, while measured sampling, tolerance, bounds, tier cutpoints, geometry, Tracking, and confirmatory contracts are versioned outputs of Phase 0. `test_geometry_version = 'sc8-test-geometry-v1'` and `target_geometry_json` must serialize the accepted P0-R4 contract exactly, including the fixed 16:9/letterbox policy, camera/FOV, arena, target dimensions/placements, frame policy, safe viewport, crosshair, and Center-Hit zone; application code must not duplicate these as unrelated constants. P0-R6 fields must adopt the SHA-pinned payload from `sc8-p0-r6-scoring-statistics-contract-v1`: `normalization_bounds_json`, `submovement_bounds_by_mode_json`, `consistency_tier_cutpoints_json`, `scoring_zero_tolerance`, and `confirmatory_contract_json` may not be independently edited or partially copied.
+- Phase 0 accepted the complete projection as `calibration_config_v1` / `sc8-calibration-config-v1`. Its exact source is `calibration/plans/calibration-config-v1.json`, pinned by `p0-r7-calibration-config-accepted-v1.json`. Database creation must insert all 20 non-ID fields from `calibration_configs_record` as one transaction and reject any hash mismatch, missing field, draft status, non-immutable status, non-canonical embedded JSON, source dependency drift, or scalar/embedded-contract mismatch. No application layer may reconstruct or partially override this row.
 - Every `session` and `sensitivity_test` references the exact calibration configuration used. Together with `formula_version`, this preserves the meaning of historical raw data and scores.
 - A database `session` is exactly one Test Mode at one sensitivity value. A `protocol_battery` groups exactly four sessions (one per mode) at one sensitivity value. `UNIQUE (battery_id, mode)` prevents duplicate mode runs inside a battery; battery completion requires all four modes.
 - `protocol_candidates` stores the canonical final eDPI after floor application and deduplication. `UNIQUE (cycle_id, phase, edpi)` enforces one candidate per final eDPI in a phase. Candidate generation must not use intermediate rounding.
@@ -325,16 +373,23 @@ injury_risk_flags (
 - Every `protocol_battery` references one canonical candidate. Its `sensitivity_value` and the candidate's value must represent the same final eDPI for the profile DPI.
 - `protocol_batteries.sensitivity_value` is the authoritative tested value for all child sessions. Any redundant sensitivity value recorded in shot or Tracking rows must match the parent battery exactly.
 - Fatigue is evaluated only after session capture and adaptation finalization. `fatigue_score_change_percentage` stores the first-half versus second-half Performance Score change, and `fatigue_flag` is true only for a decline greater than 15%; the flag must not exclude that session from Winner selection.
-- `shots.is_center_hit` supports Center-Hit Percentage as a diagnostic only. The center-zone geometry remains blocked by Phase 0: Signal Calibration and must be versioned with the test configuration.
+- `shots.is_center_hit` supports Center-Hit Percentage as a diagnostic only. Under `sc8-test-geometry-v1`, the center-zone radius is 50% of the projected target radius (25% of projected target area) and is versioned through `target_geometry_json`.
+- Every resolved `shots` row stores `resolution_timestamp`, `outcome_reason`, `final_aim_position`, and `final_precision_error`, including miss-clicks and timeouts. This makes the 15-observation P0-R6 Precision/Consistency aggregate complete without pretending a miss has zero error. `hit_timestamp`/`hit_position` remain nullable because they describe actual hits; `submovement_count` remains null on misses. For Far missing-onset cases, `first_mouse_movement_timestamp` remains null and the scoring layer applies the explicit 1500 ms fallback without writing a fabricated timestamp.
 - `mouse_samples` preserves timestamped raw deltas and their calibrated angular representation. Filtering and angular velocity are derived analysis outputs and must not overwrite raw samples.
+- `calibration_configs.input_sampling_rate_hz` is the canonical 1000 Hz uniform processing grid frozen by P0-R3, not a claim that every physical mouse reports at that rate. `timing_acceptance_policy` is `integrity-modal-cadence`: timestamp order and nominal modal cadence are hard gates, while burst/gap counts remain diagnostics and gaps split resampling segments. `session_timing_diagnostics` stores the user's configured polling-rate metadata plus automatically measured cadence for every session. Manufacturer/model/firmware may be retained as optional audit metadata but must not participate in scoring or block profile creation.
 - `shots.is_outlier` is a denormalized any-metric indicator only. `outlier_flags` is authoritative and stores one metric-level audit record per flagged observation. Statistical flags default to inclusion; `excluded_from_authoritative_score` may be true only with a separately confirmed `is_data_quality_error` and documented reason.
 - `protocol_batteries.purpose` separates exploratory data from fresh confirmatory data and prevents reuse of ranking batteries as confirmation evidence.
 - `significance_tests` stores the complete paired confirmatory decision. `significance_test_pairs` links every paired score back to the two source batteries. Test method, alternative, alpha, confidence interval, sample size, versions, and tie/winner result are mandatory for auditability.
+- Under `sc8-confirmatory-v1`, `significance_test_pairs` must contain exactly 10 complete fresh pairs with pair indices 1-10, five A-first and five B-first. Each linked battery score is the unweighted mean of exactly four complete mode scores. The analysis enumerates all 1024 sign assignments with the accepted 1e-12 score-point inclusive-extremeness comparison guard; interrupted attempts remain raw evidence but do not receive a pair row until both batteries complete. The 95% Student-t interval is reported uncertainty, while the exact p-value alone controls Winner versus tie.
 - `crosshair_config` stores only the high-contrast color selected at profile creation. Dot style and dot size are fixed by the application and must not be stored as user-editable settings.
 - `formula_version` on `sensitivity_tests` is mandatory on every insert. Never leave it null.
 - `is_adaptation_shot` must remain null while shots are being captured. After the session ends and the actual shot total for each sensitivity value is known, the Data Layer must compute the cutoff from `RESEARCH.md`, Section 8, and update every shot in a single transaction. Analysis must reject session data containing an unfinalized null adaptation flag.
 - `cycle_id` is mandatory on `protocol_batteries`, `sensitivity_tests`, and `phase_history`, preserving an explicit relationship between repeated Phase 1-3 runs and their owning continuous-improvement cycle.
 - `tracking_data.sensitivity_value` is mandatory so Tracking results can be grouped and compared by the sensitivity actually tested.
+- `tracking_data` stores one row per six-second trial under `sc8-mode-contract-v1`; `target_speed` is intentionally replaced by `path_contract_id` plus `path_parameters_json` because Curved and Variable-Speed paths cannot be represented by one scalar speed. Two nine-trial blocks cross every pattern with every target size once. `is_adaptation_trial` remains null during capture and is finalized transactionally after all 18 trials; block one becomes adaptation and block two authoritative.
+- `tracking_windows` stores six exact one-second interval-weighted aggregates per trial. Time-on-Target uses duration rather than render-frame counts, and `tracking_deviation_rms_deg` is the per-window radial RMS error used by Tracking precision/outlier analysis. The authoritative block therefore contributes 54 windows per Tracking session.
+- `calibration_configs.signal_pipeline_version = 'sc8-signal-pipeline-v1'` and `tracking_contract_json` must serialize the accepted P0-R5 signal/mode contract, including SOS coefficients, event boundaries, condition sequencing, mode completion, Tracking paths, and metric definitions. Production code must reject a configuration that references only the older timing sub-contract or a draft P0-R5 candidate.
+- `formula_version = 'sc8-performance-score-v1'` and `normalization_version = 'sc8-normalization-v1'` require 15 authoritative observations per shot mode, 54 Tracking windows, fixed P0-R6 metric bounds, Submovement bounds 1-6, fixed Consistency utility cutpoints 0.8/0.6/0.4/0.2, and scoring-zero tolerance `1e-9`. The shot formula is not final-clamped. A required data-quality omission invalidates the mode score; the only explicit scoring fallbacks are Far missing onset to 1500 ms and zero authoritative hits to Submovement Penalty 1.0, while raw nullable fields remain unchanged.
 - `PRAGMA foreign_keys = ON` must be executed and verified separately for every SQLite connection; setting it only during initial schema creation is insufficient.
 - `injury_risk_flags` records are informational only and must never block or alter test execution; they exist purely to surface warnings to the user (see `RULES.md`).
 

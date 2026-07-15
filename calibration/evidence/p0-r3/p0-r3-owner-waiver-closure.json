@@ -1,0 +1,24 @@
+{
+  "decision": "accepted-by-project-owner-calibration-waiver",
+  "decision_date": "2026-07-15",
+  "round": "P0-R3",
+  "accepted_contract_id": "sc8-p0-r3-timing-contract-v1",
+  "accepted_signal_timing_version": "sc8-signal-pipeline-timing-v1",
+  "strict_confirmation_passed": false,
+  "strict_candidate_v1_disposition": "rejected",
+  "strict_candidate_v2_disposition": "rejected",
+  "confirmation_v4_result": "calibration/evidence/p0-r3/confirmation-v4/p0-r3-confirmation-v4-result.json",
+  "confirmation_v4_result_sha256": "f153ab94fb7437ffd02f2071431de0b81df1c9b4dee5a8c2d934dd23a6e9b773",
+  "confirmation_v4_integrity_valid": true,
+  "confirmation_v4_timestamp_order_valid_for_all_runs": true,
+  "owner_direction": "No further mouse calibration runs. Treat 1000 Hz as sufficient for the current calibration host, accept user-entered DPI, in-game sensitivity, and configured polling rate, and proceed to P0-R4.",
+  "scientific_limitation": "This waiver does not convert either failed strict confirmation into a statistical pass and does not claim universal 1000 Hz physical delivery. Windows WM_INPUT receipt bursts remain visible diagnostics.",
+  "production_safeguards": [
+    "Hardware DPI and current in-game sensitivity remain validated user inputs.",
+    "Configured polling rate is user-entered supporting metadata.",
+    "Actual raw-event cadence is measured and stored per session.",
+    "Duplicate or reversed timestamps are rejected.",
+    "The nominal cadence must remain the modal interval class.",
+    "Raw evidence is preserved and resampling never bridges detected gaps."
+  ]
+}

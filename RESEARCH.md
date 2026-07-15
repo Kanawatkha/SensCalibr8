@@ -132,6 +132,44 @@ Submovement Penalty = clamp((count - L_mode) / (U_mode - L_mode), 0, 1)
 
 Source: project-owner approval dated 2026-07-14; [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 6.4 (required 0.0-1.0 output); [Boudaoud, Spjut, and Kim, IEEE CoG 2022](https://ieee-cog.org/2022/assets/papers/paper_64.pdf) (Submovement Count measurement); [OECD/JRC Composite Indicators Handbook](https://www.oecd.org/en/publications/handbook-on-constructing-composite-indicators-methodology-and-user-guide_9789264043466-en.html) (normalization).
 
+### 4.4 Accepted Scoring and Normalization Contract
+
+P0-R6 accepted combined contract `sc8-p0-r6-scoring-statistics-contract-v1`, formula version `sc8-performance-score-v1`, normalization version `sc8-normalization-v1`, Consistency-tier version `sc8-consistency-tier-v1`, and confirmatory version `sc8-confirmatory-v1`.
+
+The fixed normalization bounds are:
+
+| Mode | Accuracy / Time-on-Target | Reaction component | Precision / Deviation | Consistency sample-SD bound |
+|---|---|---|---|---|
+| Close Flick | 0-100% | Reaction Time 100-500 ms | Final Precision Error 0-15 deg | 0-7.745966692414833 deg |
+| Far Flick | 0-100% | Travel Time 0-1500 ms | Final Precision Error 0-40 deg | 0-20.655911179772886 deg |
+| Micro-Correction | 0-100% | Correction Time 0-1500 ms | Final Precision Error 0-1.500295901168436 deg | 0-0.7747494719478134 deg |
+| Tracking | 0-100% | Omitted | Tracking Deviation 0-15 deg RMS | 0-7.570424080242598 deg |
+
+Close/Far precision anchors are the maximum accepted target-center offsets. Micro's upper anchor is the angular projection of the accepted 20 px maximum offset. Tracking uses the accepted 15-degree path amplitude. These are fixed task-span anchors, not population percentiles or raw-data validity ceilings. Values beyond an anchor remain unchanged in raw storage and clamp only at normalization.
+
+The Consistency upper anchor for `n` observations over a metric scale `[0,U]` is:
+
+```
+U x sqrt(floor(n/2) x ceil(n/2) / (n x (n - 1)))
+```
+
+Use `n=15` for each shot mode and `n=54` for Tracking. Do not clip raw error values before computing sample SD; an SD above its anchor receives zero utility through the normal clamp.
+
+Shot-mode aggregation uses all 15 authoritative resolved opportunities for Accuracy, mean Final Precision Error, and Final Precision Error sample SD. Close uses mean target-visible-to-resolution time; Far uses mean movement-onset-to-click Travel Time; Micro uses mean reference-activation-to-resolution Correction Time. A timeout contributes the accepted 1500 ms ceiling. Far missing-onset raw Travel Time remains null but contributes 1500 ms to the scoring aggregate rather than a fabricated zero.
+
+Submovement Count averages authoritative hits only, with bounds `L=1`, `U=6` for Close, Far, and Micro. A count at or below 1 maps to zero penalty and a count at or above 6 maps to one. If a mode has zero authoritative hits, raw Submovement Count remains null and the scoring component fails closed at penalty `1.0`; this is not stored as a fabricated raw count. Every authoritative hit must still be signal-eligible under P0-R5. Figure 8 of the IEEE CoG 2022 paper analyzes completion time across counts 1-6 and reports the positive count/time relationship; values above 6 remain valid raw observations and merely clamp at the scale maximum.
+
+Tracking averages the 54 equal one-second Time-on-Target percentages and 54 RMS deviations; sample SD of the same deviations supplies Consistency. A Protocol Battery score is the unweighted arithmetic mean of four complete mode scores. The source shot formula is not clamped after weighting: its theoretical range remains -10 to 100, while Tracking ranges 0 to 100. The scoring-zero tolerance is `1e-9` score points; `abs(mean score) <= 1e-9` makes CV undefined and cannot pass stabilization.
+
+Worked examples:
+
+```
+Shot = 100 x (0.8x0.35 + 0.9x0.30 + 0.75x0.20 + 0.6x0.15 - 0.2x0.10) = 77.0
+Tracking = 100 x (0.8x0.4375 + 0.9x0.375 + 0.7x0.1875) = 81.875
+```
+
+Source: Phase 0 acceptance dated 2026-07-15; [P0-R6 accepted contract](calibration/plans/p0-r6-scoring-statistics-accepted-v1.json); [P0-R6 protocol](calibration/P0_R6_SCORING_STATISTICS_PROTOCOL.md); [Boudaoud, Spjut, and Kim, IEEE CoG 2022](https://ieee-cog.org/2022/assets/papers/paper_64.pdf), Section IV-D and Figure 8.
+
 Source for the base formula and weights: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 6.4; VCT Masters Reykjavik 2022 official tournament statistics (Riot Games), as cited by the proposal.
 
 ---
@@ -144,13 +182,19 @@ Approved detection pipeline:
 
 1. Capture every raw mouse delta with a high-resolution timestamp; do not use the Unity render frame rate as the input sampling rate.
 2. Convert cumulative deltas into angular azimuth/elevation in degrees using the tested sensitivity and input calibration before filtering.
-3. Resample the angular trace onto a uniform time grid using the stable measured input-event rate validated in Phase 0. A session whose event timing does not satisfy the calibrated stability contract is invalid for Submovement analysis.
+3. Measure the actual input-event cadence for the session, validate timestamp integrity and the modal-cadence policy under the versioned timing contract, and resample the angular trace onto the canonical uniform processing grid frozen in Phase 0. Duplicate/reversed timestamps or loss of the nominal modal cadence invalidate Submovement analysis; receipt bursts and detected gaps remain diagnostics, with gaps splitting the trace rather than being interpolated across.
 4. Apply a fifth-order, 7 Hz low-pass Butterworth filter represented as second-order sections (SOS), using forward-backward offline filtering to avoid phase displacement of movement boundaries.
 5. Calculate angular velocity from the filtered angular trace.
 6. Start a submovement when angular velocity crosses 8 degrees/second and end it when velocity falls below 4 degrees/second.
 7. Enforce an 80 ms refractory period between counted submovements.
 
-The sampling rate is intentionally not hardcoded here: Phase 0 must measure, validate, and freeze it together with resampling tolerance and edge-handling behavior. The complete configuration must be stored under a `signal_pipeline_version`. The 7 Hz response and 8/4 degrees-per-second thresholds must also be validated against recorded traces during Phase 0 before production use.
+P0-R3 freezes the canonical processing grid at **1000 Hz** under timing version `sc8-signal-pipeline-timing-v1`. The nominal interval is 1 ms and the resampling tolerance is **0.5 ms**, exactly the midpoint partition between adjacent cadence classes. P0-R5 verified the generated odd fifth-order SOS cascade: it has three stable sections, default pad length **18 samples**, and therefore requires at least **20 samples** per gap-delimited segment.
+
+This timing contract was closed by an explicit project-owner calibration waiver after five Pilot v3 runs and two independent five-run confirmation sets. Neither strict distribution candidate passed, and the project does not represent them as statistical passes. The accepted operational policy instead requires strictly increasing timestamps, a median interval that maps to one nominal cadence, and the one-cadence class to be modal. Receipt bursts and gaps are preserved as diagnostics; gaps split resampling segments and are never bridged. Production records user-entered configured polling rate but measures actual cadence per session, so 1000 Hz is a processing grid rather than a claim that every mouse physically reports at that rate. Hardware DPI and current in-game sensitivity remain required validated user inputs. Evidence and limitations: `calibration/evidence/p0-r3/p0-r3-owner-waiver-closure.json` and `calibration/plans/p0-r3-timing-contract-accepted-v1.json`.
+
+Mouse manufacturer/model/firmware remain optional audit metadata. P0-R5 accepted signal version `sc8-signal-pipeline-v1`. Its single-pass gain is 1.0 at DC and 0.7071067811866065 at 7 Hz; forward-backward application produces gain 0.5000000000000835 at 7 Hz and zero measured impulse-peak displacement. Filter azimuth/elevation separately with odd extension, then calculate first-difference Euclidean angular-velocity magnitude. A start occurs at `velocity >= 8 deg/s`; an end occurs at `velocity < 4 deg/s`. Merge a following onset only when it occurs less than 80 ms after the preceding end; exactly 80 ms starts a separate Submovement. Do not add an undocumented minimum-duration threshold.
+
+The accepted immutable signal/mode contract is [`calibration/plans/p0-r5-signal-mode-accepted-v1.json`](calibration/plans/p0-r5-signal-mode-accepted-v1.json), with derived evidence at [`calibration/evidence/p0-r5/p0-r5-signal-mode-derived-v1.json`](calibration/evidence/p0-r5/p0-r5-signal-mode-derived-v1.json). The canonical coefficients live in that contract and must be loaded from centralized configuration rather than duplicated in calculation logic.
 
 ```
 adaptation_cutoff = floor(total_shots_per_value x 0.5)
@@ -159,7 +203,7 @@ valid_shots = shots[adaptation_cutoff:]  # only these shots contribute to Perfor
 
 This same adaptation cutoff logic (discarding the first 50% of shots per tested value) also applies to Submovement Count aggregation, not only to Performance Score — see Section 8 below.
 
-Source: project-owner approval dated 2026-07-14; [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Sections 6.4 and 7.2; [Boudaoud, Spjut, and Kim, IEEE CoG 2022](https://ieee-cog.org/2022/assets/papers/paper_64.pdf) (fifth-order 7 Hz Butterworth filter, 8/4 degrees-per-second thresholds, 80 ms refractory period, and 50% adaptation discard); [SciPy Butterworth documentation](https://docs.scipy.org/doc/scipy-1.13.1/reference/generated/scipy.signal.butter.html) (SOS numerical-stability guidance); [SciPy forward-backward filtering documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html) (zero-phase filtering); Challis, [automatic cutoff-frequency selection for biomechanical data](https://pure.psu.edu/en/publications/a-procedure-for-the-automatic-determination-of-filter-cutoff-freq/) (residual/autocorrelation validation).
+Source: project-owner approvals dated 2026-07-14 and 2026-07-15; [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Sections 6.4 and 7.2; [Boudaoud, Spjut, and Kim, IEEE CoG 2022](https://ieee-cog.org/2022/assets/papers/paper_64.pdf) (fifth-order 7 Hz Butterworth filter, 8/4 degrees-per-second thresholds, 80 ms refractory period, and 50% adaptation discard); [SciPy Butterworth documentation](https://docs.scipy.org/doc/scipy-1.13.1/reference/generated/scipy.signal.butter.html) (SOS numerical-stability guidance); [SciPy forward-backward filtering documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html) (zero-phase filtering); Challis, [automatic cutoff-frequency selection for biomechanical data](https://pure.psu.edu/en/publications/a-procedure-for-the-automatic-determination-of-filter-cutoff-freq/) (residual/autocorrelation validation).
 
 ---
 
@@ -245,11 +289,13 @@ The following values define the required execution structure of the three-phase 
 
 The offset set is a project-owner decision that combines the seven-value Proposal V3.0 requirement with the +/-20%, +/-10%, and +/-5% progression documented by the 9-Week Rule in Section 15.
 
-After exploratory scoring identifies the top two candidates, the system must collect fresh confirmatory matched blocks that were not used to rank those candidates. Each pair must use the same mode and controlled target sequence/condition block. Compare paired block-level Performance Scores using a two-sided paired randomization/permutation test at `alpha = 0.05`.
+After exploratory scoring identifies the top two candidates, collect exactly 10 fresh matched pairs that were not used for ranking. One pair is two complete four-mode Protocol Batteries, one per candidate, with matching mode order and condition seeds. Use five A-then-B and five B-then-A pairs under the deterministic `sc8-confirmatory-v1` sequence. Interrupted/incomplete evidence is retained but does not count; repeat the same pair index. Zero differences remain in analysis, exploratory reuse and early stopping are forbidden, and the contract makes no guaranteed-power claim for a particular effect.
 
-The confirmation report must include the paired effect estimate, a 95% confidence interval, the p-value, sample size, and analysis/configuration versions. If the difference is not statistically significant, the result is a statistical tie: do not force a Phase 1 Winner, and carry both candidates into Phase 2. Phase 0 must determine and freeze the confirmatory block/sample contract before protocol implementation.
+Enumerate all `2^10 = 1024` within-pair sign flips of the mean A-minus-B battery-score difference. The two-sided p-value is the fraction with absolute permuted mean greater than or equal to the absolute observed mean, using the accepted `1e-12` score-point guard only for this inclusive floating-point comparison. Exhaustive enumeration includes the observed assignment, so no Monte Carlo correction is added. The minimum attainable two-sided p-value is `0.001953125`. A p-value strictly below `0.05` selects the candidate indicated by the effect sign; otherwise the result is a statistical tie and both candidates continue to Phase 2.
 
-Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Sections 7.2 and 8 (seven-value Phase 1, minimum 30 shots, and required significance gate); [Consolidated Research Report](reference/Valorant_Research_Report.md), Section 2, "The 9-Week Rule" (+/-20%, +/-10%, and +/-5% progression); project-owner decisions dated 2026-07-14 for the exact seven-value mapping, per-mode sample scope, and significance design; Ernst, [Permutation Methods: A Basis for Exact Inference](https://doi.org/10.1214/088342304000000396); [NIST paired signed-rank guidance](https://www.itl.nist.gov/div898/software/dataplot/refman1/auxillar/signrank.htm) (paired alternatives and typical 0.05 significance level); [ASA Statement on p-values](https://doi.org/10.1080/00031305.2016.1154108) (p-values do not measure effect size or practical importance).
+Report the paired mean effect and a two-sided 95% Student-t interval over the 10 paired differences using `t(0.975,9) = 2.2621571628540993`, together with p-value, sample size, and all analysis/configuration versions. The interval is reported effect uncertainty, not a second Winner gate; the exact randomization p-value controls the decision.
+
+Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Sections 7.2 and 8 (seven-value Phase 1, minimum 30 shots, and required significance gate); [Consolidated Research Report](reference/Valorant_Research_Report.md), Section 2, "The 9-Week Rule" (+/-20%, +/-10%, and +/-5% progression); project-owner decisions dated 2026-07-14 for the exact seven-value mapping, per-mode sample scope, and significance design; P0-R6 acceptance dated 2026-07-15; Ernst, [Permutation Methods: A Basis for Exact Inference](https://doi.org/10.1214/088342304000000396); [NIST confidence interval guidance](https://www.itl.nist.gov/div898/handbook/prc/section2/prc221.htm); [NIST Student-t critical values](https://www.itl.nist.gov/div898/handbook/eda/section3/eda3672.htm); [ASA Statement on p-values](https://doi.org/10.1080/00031305.2016.1154108) (p-values do not measure effect size or practical importance).
 
 ### 11.2 Phase 2 — Progressive Narrowing
 
@@ -387,7 +433,7 @@ A fatigue flag is informational. It must not exclude the session from Winner sel
 
 ### 17.3 Grade Combination
 
-Assign separate Reaction Time and Consistency tiers, then use the worse of the two as the final Grade. Phase 0 must calibrate and freeze versioned Consistency-tier cutpoints on the normalized Consistency Score before Grade implementation; they must not be derived dynamically from the current comparison set.
+Assign separate Reaction Time and Consistency tiers, then use the worse of the two as the final Grade. Under `sc8-consistency-tier-v1`, average the four complete mode-level normalized Consistency utilities in one Protocol Battery and assign S `[0.8,1]`, A `[0.6,0.8)`, B `[0.4,0.6)`, C `[0.2,0.4)`, or D `[0,0.2)`. These fixed equal-width utility bands are an engineering interpretation scale, not current-user percentiles. Reaction Grade uses the authoritative Close Flick mean Reaction Time because this is the visual-response interval matched to the Section 6 benchmark; Far's primary speed metric is Travel Time, Micro's is Correction Time, and Tracking has no reaction event.
 
 ### 17.4 Plateau Detection
 
@@ -400,13 +446,53 @@ When a plateau is detected, automatically begin a new Phase 1-3 recalibration us
 
 ### 17.5 Target Geometry Policy
 
-Tests use fixed world geometry with locked camera FOV, camera configuration, and Target Frame Rate. Exact dimensions, speeds, durations, FOV, and frame-rate values must be established, validated, versioned, and added to this file during Phase 0: Signal Calibration before production Test Engine implementation.
+Tests use fixed world geometry under accepted geometry version `sc8-test-geometry-v1`. The reference test viewport is 1920 x 1080 (16:9); other aspect ratios use a fixed 16:9 letterboxed viewport so FOV and target appearance do not change. The perspective camera is fixed at 103 degrees horizontal FOV (70.53280043291679 degrees vertical at 16:9), position `[0, 1.6, 0]`, zero rotation, and a target plane 10 world units in front of the camera. The arena is an enclosed 20 x 12 x 21 world-unit unlit checkerboard room with no shadows.
+
+Small, Medium, and Large cyan spheres have angular diameters of 0.75, 1.50, and 2.25 degrees. At the reference viewport and target plane, their world diameters are 0.13090156304068037, 0.26181434169670176, and 0.3927495554275395, projecting to approximately 10, 20, and 30 pixels. Close Flick uses 5, 10, and 15 degree center offsets; Far Flick uses 20, 30, and 40 degree center offsets. Each family uses the complete 3 x 3 cross-product of distance and target size. Vertical target centers are limited to 25 degrees.
+
+The Center-Hit diagnostic uses a radius equal to 50% of the target radius, or 25% of projected target area. The crosshair is a fixed four-pixel filled dot; only its color is user-configurable. Micro-Correction preserves the source-authorized 5-20 pixel center offset. The reference frame policy is 144 Hz, `vSyncCount = 0`, with adaptive sync disabled for acceptance-bearing sessions. A 32-pixel edge margin and 64-pixel top HUD reserve keep complete targets within the safe viewport.
+
+P0-R4 acceptance combined deterministic projection/Fitts/containment gates, Unity EditMode projection parity, repeatability verification, and inspection of a 1920 x 1080 reference render. The accepted immutable contract is [`calibration/plans/p0-r4-geometry-accepted-v1.json`](calibration/plans/p0-r4-geometry-accepted-v1.json); derived evidence is [`calibration/evidence/p0-r4/p0-r4-geometry-derived-v1.json`](calibration/evidence/p0-r4/p0-r4-geometry-derived-v1.json). Spawn timing, Tracking speed/duration, and signal-response behavior remain P0-R5 responsibilities and are not defined by this geometry contract.
 
 ### 17.6 Phase 1 Sample Contract
 
-The 30-shot minimum applies separately to each shot-based Test Mode at each sensitivity value. Shots are not pooled across modes. Tracking uses a separate duration/trial-based contract established during Phase 0: Signal Calibration.
+The 30-shot minimum applies separately to each shot-based Test Mode at each sensitivity value. Shots are not pooled across modes. Under `sc8-mode-contract-v1`, a minimum session resolves 30 opportunities, the first 15 are adaptation, and the final 15 are authoritative. A hit, miss-click, or 1.5-second timeout resolves an opportunity; timeout is a miss. A post-adaptation miss stores null Submovement Count with its outcome reason and must never be converted into a favorable zero penalty.
 
-Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolving OQ-002, OQ-006, OQ-009, OQ-013, OQ-014, OQ-015, and OQ-017. Values assigned to Phase 0 remain implementation-blocked until calibration is completed and versioned.
+Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolving OQ-002, OQ-006, OQ-009, OQ-013, OQ-014, OQ-015, and OQ-017. Geometry, mode/sample, scoring, and statistical values are accepted under the P0-R4/P0-R5/P0-R6 contracts. Production use remains blocked until P0-R7 compiles and freezes complete Calibration Configuration v1.
+
+### 17.7 Accepted Mode and Tracking Contract
+
+Mode contract `sc8-mode-contract-v1` uses a deterministic versioned sequence that excludes sensitivity value and blind candidate label. Compared sensitivities therefore receive the same condition sequence. Close/Far sessions use three complete 3 x 3 distance-by-size blocks plus three rotating conditions, so each of nine conditions occurs three or four times in 30 trials and the extra conditions rotate by battery repetition.
+
+- Close Flick: hide the target for a deterministic randomized 500-1000 ms foreperiod, then measure Reaction Time from visibility to click or timeout.
+- Far Flick: center-reference activation exposes the previewed Far target. Reaction Time is activation to first 8 deg/s movement onset; Travel Time is onset to click.
+- Micro-Correction: use deterministic radial/directional offsets within 5-20 px and the fixed Small target from `sc8-test-geometry-v1`. This is the explicit exception to generic three-size variation.
+- Tracking: run two balanced blocks. Each block contains all three patterns crossed with Small/Medium/Large once (9 trials). Block one is adaptation and block two is authoritative. Each trial is 6 seconds with six exact 1-second windows, yielding 18 trials and 54 post-adaptation windows per Tracking session.
+- Linear Tracking: horizontal triangle path over +/-15 degrees at 15 deg/s; derived round-trip period 4 seconds.
+- Curved Tracking: ellipse with 15-degree horizontal and 10-degree vertical radii; 6-second period and derived speed range 10.471975511965978-15.707963267948966 deg/s.
+- Variable-Speed Tracking: horizontal 15-degree-amplitude sinusoid with 4-second period; derived speed range 0-23.561944901923447 deg/s.
+
+Evaluate every Tracking path analytically from high-resolution elapsed time, never by frame-integrating position. Time-on-Target is interval-weighted duration with radial error no greater than target radius. Per-window Tracking Deviation is interval-weighted RMS radial center error in degrees. Tracking Consistency is the sample SD across the 54 post-adaptation window deviations. Window intervals are clipped to exact boundaries so equivalent irregular frame partitions produce identical metrics.
+
+The 1.5-second failed-trial ceiling and reference-target separation follow [Boudaoud, Spjut, and Kim, IEEE CoG 2022](https://ieee-cog.org/2022/assets/papers/paper_64.pdf), Section III-C. Foreperiod and Tracking path/sample values are P0-R5 engineering calibration outputs accepted through balance, geometry-safety, interval-invariance, deterministic-reproduction, and Unity-parity gates; they are not attributed to the two primary project reports.
+
+### 17.8 Accepted Scoring and Statistical Contract
+
+The complete P0-R6 payload and acceptance evidence are versioned in [`calibration/plans/p0-r6-scoring-statistics-accepted-v1.json`](calibration/plans/p0-r6-scoring-statistics-accepted-v1.json) and [`calibration/P0_R6_SCORING_STATISTICS_PROTOCOL.md`](calibration/P0_R6_SCORING_STATISTICS_PROTOCOL.md). Production must load the accepted payload by its pinned SHA-256, require all four version IDs, and reject draft, incomplete, or modified configuration. Section 4.4 defines scoring aggregation/bounds and Section 11.1 defines the confirmatory decision.
+
+---
+
+## 18. Frozen Calibration Configuration v1
+
+Phase 0 is complete under immutable configuration `calibration_config_v1` and contract `sc8-calibration-config-v1`. The authoritative file is [`calibration/plans/calibration-config-v1.json`](calibration/plans/calibration-config-v1.json), pinned by [`calibration/plans/p0-r7-calibration-config-accepted-v1.json`](calibration/plans/p0-r7-calibration-config-accepted-v1.json) at SHA-256 `c618a3e50473b072b107d2e2926f4d05e7bbafa33bc04af8beb5eb5f775b3b2e`.
+
+The configuration projects all 20 required non-ID `calibration_configs` fields and binds formula `sc8-performance-score-v1`, normalization `sc8-normalization-v1`, signal pipeline `sc8-signal-pipeline-v1`, geometry `sc8-test-geometry-v1`, mode contract `sc8-mode-contract-v1`, Consistency tiers `sc8-consistency-tier-v1`, and confirmatory contract `sc8-confirmatory-v1`. Its six JSON database fields are canonical serialized copies of the accepted Phase 0 contracts and may not be edited independently.
+
+The timing portion remains an operational project-owner waiver: `strict_timing_confirmation_passed = false`, both strict candidates remain rejected, and 1000 Hz is the uniform processing grid/configured metadata for the current host rather than a universal physical delivery claim. Actual event cadence remains measured and stored per session.
+
+Any change to the frozen bytes, a source contract, a formula/version identity, or an embedded payload requires a new configuration version and a new acceptance envelope. Production code must reject draft, incomplete, hash-mismatched, or internally inconsistent configurations.
+
+Source: P0-R3 through P0-R6 accepted local contracts and the P0-R7 deterministic freeze/acceptance record dated 2026-07-15. See [`calibration/P0_R7_CALIBRATION_CONFIG_FREEZE.md`](calibration/P0_R7_CALIBRATION_CONFIG_FREEZE.md).
 
 ---
 
@@ -423,11 +509,20 @@ Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolvi
 | Performance Score weight — Submovement Penalty | 0.10 (subtracted) | 4 |
 | Normalized component range | 0.0-1.0 | 4.2 |
 | Stored/displayed Performance Score multiplier | 100 | 4 |
+| Formula / normalization versions | `sc8-performance-score-v1` / `sc8-normalization-v1` | 4.4 |
+| Shot / Tracking theoretical score range | -10 to 100 / 0 to 100 | 4.4 |
+| Scoring-zero tolerance | 1e-9 score points | 4.4 |
+| Submovement Count bounds | 1-6 (Close/Far/Micro) | 4.4 |
+| Consistency utility tiers | S >=0.8; A >=0.6; B >=0.4; C >=0.2; D <0.2 | 17.3 |
 | Submovement Butterworth order | 5 | 5 |
 | Submovement cutoff frequency | 7 Hz | 5 |
 | Submovement start threshold | 8 deg/s | 5 |
 | Submovement end threshold | 4 deg/s | 5 |
 | Submovement refractory period | 80 ms | 5 |
+| Canonical input processing grid | 1000 Hz | 5 |
+| Single-cadence resampling tolerance | 0.5 ms | 5 |
+| Fifth-order SOS structural pad length | 18 samples (20-sample minimum segment) | 5 |
+| Timing acceptance policy | Strict timestamp integrity + nominal modal cadence; burst/gap diagnostics retained | 5 |
 | Adaptation discard proportion | 50% of shots per value | 8 |
 | Headshot% target threshold ceiling | 35% | 7 |
 | Reaction Time Tier S | `t < 200 ms` | 6 |
@@ -443,6 +538,10 @@ Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolvi
 | Phase 2 maximum repetition | 10 complete batteries per value | 11.2 |
 | Phase 1 significance level | two-sided `alpha = 0.05` | 11.1 |
 | Phase 1 confidence interval | 95% | 11.1 |
+| Confirmatory sample / enumeration | 10 fresh pairs / 1024 sign flips | 11.1 |
+| Confirmatory order balance | 5 A-first / 5 B-first | 11.1 |
+| Minimum attainable confirmatory p | 0.001953125 | 11.1 |
+| Permutation comparison tolerance | 1e-12 score points | 11.1 |
 | Phase 2 stabilization threshold | Performance Score CV < 10% | 11.2 |
 | Phase 3 narrowing range | +/- 5% | 11.3 |
 | Continuous training block | 5-10 sessions | 11.4 |
@@ -461,3 +560,24 @@ Source for Sections 17.1-17.6: project-owner decisions dated 2026-07-14, resolvi
 | Fatigue flag threshold | Performance Score drop > 15% | 17.2 |
 | Plateau Grade window | 3 consecutive cycles | 17.4 |
 | Plateau Performance Score change | < 5% | 17.4 |
+| Test geometry version | `sc8-test-geometry-v1` | 17.5 |
+| Reference test viewport | 1920 x 1080 (fixed 16:9; letterbox otherwise) | 17.5 |
+| Horizontal / vertical FOV | 103 deg / 70.53280043291679 deg at 16:9 | 17.5 |
+| Target plane distance | 10 world units | 17.5 |
+| Arena dimensions | 20 x 12 x 21 world units | 17.5 |
+| Target angular diameters | 0.75 / 1.50 / 2.25 deg | 17.5 |
+| Close / Far center offsets | 5/10/15 deg / 20/30/40 deg | 17.5 |
+| Center-Hit radius ratio | 0.5 (area ratio 0.25) | 17.5 |
+| Fixed crosshair diameter | 4 px | 17.5 |
+| Reference Target Frame Rate | 144 Hz | 17.5 |
+| Safe viewport exclusions | 32 px edge; 64 px top HUD reserve | 17.5 |
+| Accepted signal pipeline | `sc8-signal-pipeline-v1` | 5 |
+| Accepted mode contract | `sc8-mode-contract-v1` | 17.7 |
+| Shot opportunity timeout | 1.5 s | 17.6 |
+| Close Flick foreperiod | 500-1000 ms | 17.7 |
+| Tracking trial contract | 2 x 9 trials; first block adaptation; 6 s/trial | 17.7 |
+| Tracking metric window | 1 s; 54 post-adaptation windows/session | 17.7 |
+| Linear Tracking path | +/-15 deg at 15 deg/s; 4 s round trip | 17.7 |
+| Curved Tracking path | radii 15/10 deg; 6 s period | 17.7 |
+| Variable-Speed Tracking path | 15 deg amplitude; 4 s period | 17.7 |
+| Frozen calibration configuration | `calibration_config_v1` / `sc8-calibration-config-v1` | 18 |

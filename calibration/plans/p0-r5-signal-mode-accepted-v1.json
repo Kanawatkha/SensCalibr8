@@ -1,0 +1,158 @@
+{
+  "contract_id": "sc8-p0-r5-signal-mode-contract-v1",
+  "signal_pipeline_version": "sc8-signal-pipeline-v1",
+  "mode_contract_version": "sc8-mode-contract-v1",
+  "status": "accepted",
+  "accepted_date": "2026-07-15",
+  "acceptance_method": "Deterministic Butterworth/SOS derivation, forward-backward response fixtures, explicit threshold/refractory boundary tests, balanced mode-contract derivation, interval-weighted Tracking invariance, and Unity EditMode parity; no additional operator polling run required.",
+  "dependencies": {
+    "timing_contract_id": "sc8-p0-r3-timing-contract-v1",
+    "test_geometry_version": "sc8-test-geometry-v1"
+  },
+  "signal_pipeline": {
+    "sampling_rate_hz": 1000.0,
+    "filter_family": "butterworth-lowpass",
+    "filter_order": 5,
+    "cutoff_frequency_hz": 7.0,
+    "representation": "second-order-sections",
+    "sos": [
+      [4.793801754376094e-09, 4.793801754376094e-09, 0.0, 1.0, -0.9569573219226812, 0.0],
+      [1.0, 2.0, 1.0, 1.0, -1.9294340574583, 0.9313017524091318],
+      [1.0, 2.0, 1.0, 1.0, -1.9712822627176634, 0.9731904667915525]
+    ],
+    "application": "forward-backward-offline",
+    "pad_type": "odd",
+    "pad_length_samples": 18,
+    "minimum_filterable_segment_samples": 20,
+    "filter_axes": ["azimuth_deg", "elevation_deg"],
+    "angular_velocity_method": "first-difference-euclidean-magnitude",
+    "start_threshold_deg_per_sec": 8.0,
+    "start_boundary": "greater-than-or-equal",
+    "end_threshold_deg_per_sec": 4.0,
+    "end_boundary": "strictly-less-than",
+    "refractory_period_ms": 80.0,
+    "refractory_rule": "merge-when-next-onset-minus-previous-end-is-less-than-80-ms",
+    "gap_policy": "split-before-filtering-never-bridge",
+    "short_segment_policy": "retain-raw-mark-signal-ineligible-no-one-pass-fallback",
+    "verified_response": {
+      "dc_gain": 1.0,
+      "single_pass_gain_at_7_hz": 0.7071067811866065,
+      "forward_backward_gain_at_7_hz": 0.5000000000000835,
+      "impulse_peak_displacement_samples": 0
+    }
+  },
+  "sequence_policy": {
+    "generator": "deterministic-versioned-seed",
+    "same_condition_sequence_across_sensitivity_candidates": true,
+    "seed_includes": ["mode_contract_version", "profile_id", "cycle_id", "phase", "mode", "battery_repetition_ordinal"],
+    "seed_excludes": ["sensitivity_value", "blind_candidate_label"],
+    "shot_condition_balance": "three-complete-nine-condition-blocks-plus-three-rotating-conditions",
+    "tracking_condition_balance": "one-complete-pattern-by-size-block-before-and-after-adaptation"
+  },
+  "shared_shot_contract": {
+    "minimum_resolved_trials": 30,
+    "adaptation_fraction": 0.5,
+    "adaptation_trials_at_minimum": 15,
+    "post_adaptation_trials_at_minimum": 15,
+    "single_click_per_trial": true,
+    "trial_timeout_seconds": 1.5,
+    "timeout_outcome": "miss",
+    "hit_submovement_requirement": "every-post-adaptation-hit-must-have-an-eligible-signal-segment",
+    "miss_submovement_policy": "store-null-with-outcome-reason-do-not-treat-as-zero-penalty"
+  },
+  "modes": {
+    "flick_close": {
+      "activation": "hidden-target-after-deterministic-random-foreperiod",
+      "foreperiod_ms": {"minimum": 500.0, "maximum": 1000.0},
+      "center_offsets_deg": [5.0, 10.0, 15.0],
+      "target_sizes": ["small", "medium", "large"],
+      "metric_clock": "target-visible-to-click-or-timeout",
+      "primary_metrics": ["reaction_time_ms", "signed_overflick_underflick_deg", "final_precision_error_deg"]
+    },
+    "flick_far": {
+      "activation": "center-reference-click-activates-visible-preview-target",
+      "center_offsets_deg": [20.0, 30.0, 40.0],
+      "target_sizes": ["small", "medium", "large"],
+      "reaction_time_definition": "activation-to-first-8-deg-per-sec-movement-onset",
+      "travel_time_definition": "first-movement-onset-to-click",
+      "missing_onset_policy": "travel-time-null-and-trial-retained-as-miss-or-data-quality-review",
+      "primary_metrics": ["travel_time_ms", "final_precision_error_deg"]
+    },
+    "micro_correction": {
+      "activation": "center-reference-click-activates-visible-preview-target",
+      "target_size": "small",
+      "target_size_exception_basis": "specific-mode-requirement-and-accepted-sc8-test-geometry-v1",
+      "offset_px": {"minimum": 5.0, "maximum": 20.0},
+      "offset_sampling": "deterministic-uniform-radius-and-direction",
+      "primary_metrics": ["micro_adjustment_count", "final_precision_error_deg", "submovement_count"]
+    },
+    "tracking": {
+      "trial_duration_seconds": 6.0,
+      "metric_window_seconds": 1.0,
+      "blocks": 2,
+      "adaptation_blocks": 1,
+      "patterns": ["linear", "curved", "variable_speed"],
+      "target_sizes": ["small", "medium", "large"],
+      "trials_per_block": 9,
+      "total_trials": 18,
+      "post_adaptation_trials": 9,
+      "post_adaptation_metric_windows": 54,
+      "path_evaluation": "analytic-from-high-resolution-elapsed-time-not-frame-integrated",
+      "linear": {
+        "horizontal_half_range_deg": 15.0,
+        "constant_speed_deg_per_sec": 15.0,
+        "derived_round_trip_period_seconds": 4.0,
+        "vertical_offset_deg": 0.0
+      },
+      "curved": {
+        "horizontal_radius_deg": 15.0,
+        "vertical_radius_deg": 10.0,
+        "period_seconds": 6.0,
+        "derived_speed_range_deg_per_sec": [10.471975511965978, 15.707963267948966]
+      },
+      "variable_speed": {
+        "horizontal_amplitude_deg": 15.0,
+        "period_seconds": 4.0,
+        "derived_speed_range_deg_per_sec": [0.0, 23.561944901923447],
+        "path": "x-equals-amplitude-times-sine-two-pi-t-over-period-y-equals-zero"
+      },
+      "time_on_target_definition": "interval-weighted-percentage-with-radial-error-not-greater-than-target-angular-radius",
+      "tracking_deviation_definition": "interval-weighted-rms-radial-center-error-degrees-per-one-second-window",
+      "consistency_input": "sample-standard-deviation-of-post-adaptation-window-tracking-deviation",
+      "window_boundary_policy": "clip-sample-intervals-to-six-exact-half-open-one-second-windows",
+      "completion": "all-18-trials-complete-with-monotonic-boundary-covering-timestamps-and-analytic-target-state"
+    }
+  },
+  "session_acceptance": {
+    "required": [
+      "immutable-timing-geometry-signal-and-mode-version-identity",
+      "native-borderless-fullscreen-state-unchanged",
+      "focus-and-display-state-unchanged",
+      "strictly-increasing-high-resolution-event-timestamps",
+      "timing-contract-integrity-modal-cadence-pass",
+      "raw-evidence-preserved-separately-from-derived-data",
+      "deterministic-condition-sequence-reproducible-from-seed",
+      "mode-specific-completion-contract-pass",
+      "adaptation-flags-finalized-after-session"
+    ],
+    "diagnostic_only": [
+      "receipt-burst-fraction",
+      "receipt-gap-fraction",
+      "render-frame-interval-distribution"
+    ]
+  },
+  "evidence": {
+    "candidate": "calibration/plans/p0-r5-signal-mode-candidate-v1.json",
+    "candidate_sha256": "12d20a6f7a071d1571670c93e23af25f492614337af7dc6fdc1ff0db2135ac55",
+    "derived": "calibration/evidence/p0-r5/p0-r5-signal-mode-derived-v1.json",
+    "derived_sha256": "be64032e2f9f772cac84ef8c28235337ca0e8e75b1f0cbb87d3b359bb0ca3cda",
+    "unity_editmode": "calibration/evidence/p0-r5/p0-r5-unity-editmode-results-v1.xml",
+    "unity_editmode_sha256": "7360e8fa19f607a57a96ff686788389c0456f9a886f3be922cbb3e8f3b4305e7",
+    "timing_contract_sha256": "a60785d26869a54c89918d28189ce8f8ad4fcccd23ffdd7e94959a207be5ad56",
+    "geometry_contract_sha256": "bf0a0d1024b5aa4dcdeae924e4b0de0444e6e2dc722a35c6fb7a87da4ccd8622",
+    "unity_version": "6000.5.3f1",
+    "python_runtime": "3.12.13",
+    "numpy_version": "2.3.5",
+    "scipy_runtime_dependency": "none-canonical-sos-derived-and-tested-in-project"
+  }
+}

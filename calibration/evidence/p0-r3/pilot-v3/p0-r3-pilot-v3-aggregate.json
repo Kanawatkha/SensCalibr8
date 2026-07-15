@@ -1,0 +1,28 @@
+{
+  "analysis_version": "p0-r3-timing-analysis-v1",
+  "capture_plan_id": "sc8-p0-r3-input-timing-pilot-v3",
+  "condition_id": "wg903-1600dpi-1000hz-native-wm-input",
+  "device_id": 1095924446,
+  "environment_id": "sc8-env-zulartan-wg903-native-v1",
+  "maximum_run_rate_hz": 1003.1096158422927,
+  "minimum_run_rate_hz": 1001.6024118863011,
+  "pilot_candidate_resampling_tolerance_ms": 0.9920999873429537,
+  "pilot_candidate_sampling_rate_hz": 1002.1043876407273,
+  "rate_median_absolute_deviation_hz": 0.40152738995220716,
+  "requires_fresh_confirmation": true,
+  "run_count": 5,
+  "run_ids": [
+    "20260715t0630447749738z-r1",
+    "20260715t0631193280677z-r2",
+    "20260715t0631538304273z-r3",
+    "20260715t0632258767104z-r4",
+    "20260715t0632592526448z-r5"
+  ],
+  "trace_ids": [
+    "20260715t0630447749738z-r1-mouse",
+    "20260715t0631193280677z-r2-mouse",
+    "20260715t0631538304273z-r3-mouse",
+    "20260715t0632258767104z-r4-mouse",
+    "20260715t0632592526448z-r5-mouse"
+  ]
+}

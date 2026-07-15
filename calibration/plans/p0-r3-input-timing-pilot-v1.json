@@ -1,0 +1,28 @@
+{
+  "protocol_id": "sc8-p0-r1-protocol-v1",
+  "capture_plan_id": "sc8-p0-r3-input-timing-pilot-v1",
+  "environment_id": "sc8-env-zulartan-wg903-v1",
+  "condition_id": "wg903-1600dpi-1000hz-user-bluetooth",
+  "evidence_state": "pilot",
+  "acceptance_owner": "project-owner",
+  "planned_repeat_count": 5,
+  "trace_duration_seconds": 30,
+  "execution_order": "sequential-repetitions-1-through-5-single-condition",
+  "controlled_motion_instruction": "Continuous figure-eight motion at a comfortable steady pace without lifting the mouse.",
+  "controlled_variables": {
+    "mouse_dpi": 1600,
+    "configured_polling_rate_hz": 1000,
+    "mouse_connection_user_report": "Bluetooth",
+    "mouse_connection_os_observation": "USB HID composite VID_1D57 PID_FA60",
+    "menu_window": "960x540 resizable",
+    "capture_display_mode": "native-resolution FullScreenWindow",
+    "vsync_state": "off-by-application",
+    "adaptive_sync_policy": "operator-confirmed-off-before-capture",
+    "target_frame_rate_policy": "detected-active-refresh-per-frozen-environment; production value remains owned by P0-R4",
+    "power_plan": "High performance",
+    "background_load_policy": "operator-confirmed-no-material-background-load",
+    "network_state": "offline",
+    "focus_required": true
+  },
+  "approval": "Project-owner approved A-H and device settings on 2026-07-15."
+}

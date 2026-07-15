@@ -1,0 +1,126 @@
+{
+  "acceptance_gates": {
+    "component_completeness_policy": true,
+    "confirmatory_enumeration": true,
+    "confirmatory_positive_fixture": true,
+    "confirmatory_tie_fixture": true,
+    "consistency_bounds": true,
+    "cv_zero_guard": true,
+    "dependency_identity": true,
+    "formula_negative_floor_retained": true,
+    "formula_weights_and_ranges": true,
+    "geometry_bounds": true,
+    "grade_boundaries": true,
+    "normalization_boundaries": true,
+    "order_balance": true,
+    "submovement_boundaries": true,
+    "worked_score_examples": true
+  },
+  "accepted": true,
+  "analysis_version": "p0-r6-scoring-statistics-analysis-v1",
+  "candidate_id": "sc8-p0-r6-scoring-statistics-candidate-v1",
+  "dependencies": {
+    "geometry_contract_id": "sc8-test-geometry-v1",
+    "mode_contract_version": "sc8-mode-contract-v1",
+    "signal_mode_contract_id": "sc8-p0-r5-signal-mode-contract-v1",
+    "signal_pipeline_version": "sc8-signal-pipeline-v1"
+  },
+  "derived_bounds": {
+    "flick_close": {
+      "consistency_upper": 7.745966692414833,
+      "precision_upper": 15.0
+    },
+    "flick_far": {
+      "consistency_upper": 20.655911179772886,
+      "precision_upper": 40.0
+    },
+    "micro_correction": {
+      "consistency_upper": 0.7747494719478134,
+      "precision_upper": 1.500295901168436
+    },
+    "tracking": {
+      "consistency_upper": 7.570424080242598,
+      "precision_upper": 15.0
+    }
+  },
+  "fixtures": {
+    "confirmatory_positive": {
+      "alpha": 0.05,
+      "assignment_count": 1024,
+      "confidence_interval_95": [
+        5.0,
+        5.0
+      ],
+      "differences": [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+      ],
+      "effect_estimate": 5.0,
+      "extreme_count": 2,
+      "is_significant": true,
+      "n": 10,
+      "p_value": 0.001953125,
+      "result": "candidate_a"
+    },
+    "confirmatory_symmetric": {
+      "alpha": 0.05,
+      "assignment_count": 1024,
+      "confidence_interval_95": [
+        -2.5009088420006473,
+        2.5009088420006473
+      ],
+      "differences": [
+        1.0,
+        -1.0,
+        2.0,
+        -2.0,
+        3.0,
+        -3.0,
+        4.0,
+        -4.0,
+        5.0,
+        -5.0
+      ],
+      "effect_estimate": 0.0,
+      "extreme_count": 1024,
+      "is_significant": false,
+      "n": 10,
+      "p_value": 1.0,
+      "result": "statistical_tie"
+    },
+    "cv_percent": 5.0,
+    "shot_formula_maximum": 99.99999999999999,
+    "shot_formula_minimum": -10.0,
+    "shot_worked_score": 77.0,
+    "tracking_formula_maximum": 100.0,
+    "tracking_formula_minimum": 0.0,
+    "tracking_worked_score": 81.875
+  },
+  "gate_count": 15,
+  "inputs": {
+    "candidate": "calibration/plans/p0-r6-scoring-statistics-candidate-v1.json",
+    "candidate_sha256": "10ac7a5adb91261e4e5b16cec191d3cd5cdd9b3868ab01197aa37c561df081b2",
+    "geometry": "calibration/plans/p0-r4-geometry-accepted-v1.json",
+    "geometry_sha256": "bf0a0d1024b5aa4dcdeae924e4b0de0444e6e2dc722a35c6fb7a87da4ccd8622",
+    "signal_mode": "calibration/plans/p0-r5-signal-mode-accepted-v1.json",
+    "signal_mode_sha256": "c767abeb0022a10da5146f1f049916e4d45bfd04733b679a07933da2467adbd4"
+  },
+  "runtime": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.13"
+  },
+  "versions": {
+    "confirmatory_contract_version": "sc8-confirmatory-v1",
+    "consistency_tier_version": "sc8-consistency-tier-v1",
+    "formula_version": "sc8-performance-score-v1",
+    "normalization_version": "sc8-normalization-v1"
+  }
+}

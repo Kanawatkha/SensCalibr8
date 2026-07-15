@@ -1,0 +1,94 @@
+{
+  "acceptance_envelope": {
+    "maximum_burst_interval_fraction": 0.0849851831868774,
+    "maximum_gap_interval_fraction": 0.22850524713073753,
+    "maximum_median_absolute_deviation_ms": 0.06653463461157862,
+    "maximum_median_sampling_rate_hz": 1006.8357184355203,
+    "minimum_median_sampling_rate_hz": 997.4538729569023
+  },
+  "analysis_version": "p0-r3-timing-analysis-v3",
+  "method": {
+    "assumption": "Per-run summary metrics are independent and approximately normally distributed; small pilot n is handled conservatively but remains a documented limitation.",
+    "critical_value_cumulative_probability": 0.999,
+    "degrees_of_freedom": 4,
+    "familywise_alpha": 0.05,
+    "formula": "mean +/- t * sample_sd * sqrt(1 + 1 / pilot_n)",
+    "future_run_count": 5,
+    "metric_count": 5,
+    "name": "bonferroni-familywise-single-future-observation-prediction",
+    "pilot_run_count": 5,
+    "prediction_scale": 1.0954451150103321,
+    "simultaneous_statement_count": 25,
+    "student_t_critical_value": 7.173
+  },
+  "metric_prediction_bounds": {
+    "burst_interval_fraction": {
+      "pilot_mean": 0.06314620565364329,
+      "pilot_sample_standard_deviation": 0.0027793346874392037,
+      "prediction_lower": 0.04130722812040919,
+      "prediction_upper": 0.0849851831868774
+    },
+    "gap_interval_fraction": {
+      "pilot_mean": 0.054447681361778466,
+      "pilot_sample_standard_deviation": 0.022151413884496936,
+      "prediction_lower": -0.1196098844071806,
+      "prediction_upper": 0.22850524713073753
+    },
+    "median_absolute_deviation_ms": {
+      "pilot_mean": 0.033740000799298286,
+      "pilot_sample_standard_deviation": 0.004173604885010358,
+      "prediction_lower": 0.0009453669870179565,
+      "prediction_upper": 0.06653463461157862
+    },
+    "median_sampling_rate_hz": {
+      "pilot_mean": 1002.1447956962113,
+      "pilot_sample_standard_deviation": 0.59698968349679,
+      "prediction_lower": 997.4538729569023,
+      "prediction_upper": 1006.8357184355203
+    },
+    "p99_single_cadence_residual_ms": {
+      "pilot_mean": 0.3941686105541886,
+      "pilot_sample_standard_deviation": 0.004880559231727727,
+      "prediction_lower": 0.35581899260676336,
+      "prediction_upper": 0.43251822850161387
+    }
+  },
+  "pilot_aggregate": {
+    "candidate_policy": "Canonical grid uses the predeclared configured device rate; fresh confirmation must reproduce the unexpanded pilot envelope.",
+    "capture_plan_id": "sc8-p0-r3-input-timing-pilot-v3",
+    "condition_id": "wg903-1600dpi-1000hz-native-wm-input",
+    "configured_nominal_sampling_rate_hz": 1000.0,
+    "device_id": 1095924446,
+    "environment_id": "sc8-env-zulartan-wg903-native-v1",
+    "maximum_run_rate_hz": 1003.1096158422927,
+    "measured_median_sampling_rate_hz": 1002.1043876407273,
+    "minimum_run_rate_hz": 1001.6024118863011,
+    "pilot_candidate_acceptance_envelope": {
+      "maximum_burst_interval_fraction": 0.0677903377741892,
+      "maximum_gap_interval_fraction": 0.08839518701072775,
+      "maximum_median_absolute_deviation_ms": 0.03960018511861563,
+      "maximum_median_sampling_rate_hz": 1003.1096158422927,
+      "minimum_median_sampling_rate_hz": 1001.6024118863011
+    },
+    "pilot_candidate_resampling_tolerance_ms": 0.3990000803023577,
+    "pilot_candidate_sampling_rate_hz": 1000.0,
+    "rate_median_absolute_deviation_hz": 0.40152738995220716,
+    "requires_fresh_confirmation": true,
+    "run_count": 5,
+    "run_ids": [
+      "20260715t0630447749738z-r1",
+      "20260715t0631193280677z-r2",
+      "20260715t0631538304273z-r3",
+      "20260715t0632258767104z-r4",
+      "20260715t0632592526448z-r5"
+    ],
+    "trace_ids": [
+      "20260715t0630447749738z-r1-mouse",
+      "20260715t0631193280677z-r2-mouse",
+      "20260715t0631538304273z-r3-mouse",
+      "20260715t0632258767104z-r4-mouse",
+      "20260715t0632592526448z-r5-mouse"
+    ]
+  },
+  "resampling_tolerance_ms": 0.43251822850161387
+}

@@ -1,0 +1,44 @@
+{
+  "contract_id": "sc8-p0-r6-scoring-statistics-contract-v1",
+  "status": "accepted",
+  "accepted_date": "2026-07-15",
+  "accepted_candidate_id": "sc8-p0-r6-scoring-statistics-candidate-v1",
+  "accepted_candidate_path": "calibration/plans/p0-r6-scoring-statistics-candidate-v1.json",
+  "accepted_candidate_sha256": "10ac7a5adb91261e4e5b16cec191d3cd5cdd9b3868ab01197aa37c561df081b2",
+  "payload_policy": "The candidate payload identified by the exact SHA-256 above is adopted byte-for-byte as the immutable contract configuration; changing that file invalidates this acceptance envelope and requires a new version.",
+  "versions": {
+    "formula_version": "sc8-performance-score-v1",
+    "normalization_version": "sc8-normalization-v1",
+    "consistency_tier_version": "sc8-consistency-tier-v1",
+    "confirmatory_contract_version": "sc8-confirmatory-v1"
+  },
+  "dependencies": {
+    "geometry_contract_id": "sc8-test-geometry-v1",
+    "signal_mode_contract_id": "sc8-p0-r5-signal-mode-contract-v1",
+    "signal_pipeline_version": "sc8-signal-pipeline-v1",
+    "mode_contract_version": "sc8-mode-contract-v1"
+  },
+  "numerical_policy": {
+    "permutation_extreme_comparison_tolerance_points": 1e-12,
+    "purpose": "Inclusive extremeness comparison guard only; it does not change score equality, alpha, or practical significance."
+  },
+  "acceptance_method": "Deterministic dependency-bound derivation, mathematical boundary and worked-example fixtures, exhaustive 1024-assignment confirmatory fixtures, append-only evidence, and plain-C# Unity parity.",
+  "acceptance_summary": {
+    "automated_gate_count": 15,
+    "automated_gates_passed": 15,
+    "python_total_tests": 57,
+    "python_failed_tests": 0,
+    "unity_total_tests": 35,
+    "unity_failed_tests": 0,
+    "unity_skipped_tests": 0,
+    "unity_inconclusive_tests": 0
+  },
+  "evidence": {
+    "derived_path": "calibration/evidence/p0-r6/p0-r6-scoring-statistics-derived-v1.json",
+    "derived_sha256": "7dbc114af7fbeae346e9a47de964d79af81f2f0f767d897361bf4e905b2599d1",
+    "unity_editmode_path": "calibration/evidence/p0-r6/p0-r6-unity-editmode-results-v1.xml",
+    "unity_editmode_sha256": "3339cfb6adc927e202267ac5dc8575864cb7594315a138541f259d120b513752",
+    "unity_version": "6000.5.3f1"
+  },
+  "production_authorization": "Scoring/statistical component accepted for P0-R7 integration only; the production Test Engine remains blocked until the complete Calibration Configuration v1 passes the P0-R7 exit gate."
+}

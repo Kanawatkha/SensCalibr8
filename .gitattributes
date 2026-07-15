@@ -1,0 +1,31 @@
+# Keep source and project metadata deterministic across Windows/macOS/Linux.
+* text=auto
+
+*.md text eol=lf
+*.py text eol=lf
+*.cs text eol=lf
+*.csproj text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.asmdef text eol=lf
+*.asset text eol=lf
+*.meta text eol=lf
+*.unity text eol=lf
+*.txt text eol=lf
+
+# Unity YAML intentionally serializes empty scalar values as `key: `.
+*.asset whitespace=-blank-at-eol
+*.meta whitespace=-blank-at-eol
+*.unity whitespace=-blank-at-eol
+
+# Evidence images and any intentional future binaries must not be normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+
+# Accepted contracts and evidence are SHA-pinned; preserve their exact bytes.
+calibration/plans/** -text
+calibration/evidence/** -text
+calibration/evidence/** whitespace=-blank-at-eol

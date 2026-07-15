@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SensCalibr8.Calibration.Native</RootNamespace>
+    <AssemblyName>SensCalibr8.P0R3.NativeCapture</AssemblyName>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,74 @@
+{
+  "plan_id": "sc8-p0-r7-calibration-config-freeze-plan-v1",
+  "status": "approved",
+  "created_date": "2026-07-15",
+  "target_contract_id": "sc8-calibration-config-v1",
+  "target_config_version": "calibration_config_v1",
+  "output_path": "calibration/plans/calibration-config-v1.json",
+  "evidence_path": "calibration/evidence/p0-r7/p0-r7-calibration-config-derived-v1.json",
+  "serialization": "utf8-pretty-json-sort-keys-no-nan-trailing-newline",
+  "database_json_serialization": "utf8-canonical-json-sorted-keys-compact-no-nan",
+  "source_contracts": [
+    {
+      "role": "timing",
+      "path": "calibration/plans/p0-r3-timing-contract-accepted-v1.json",
+      "sha256": "a60785d26869a54c89918d28189ce8f8ad4fcccd23ffdd7e94959a207be5ad56"
+    },
+    {
+      "role": "timing_owner_waiver",
+      "path": "calibration/evidence/p0-r3/p0-r3-owner-waiver-closure.json",
+      "sha256": "84ab17a9d30857cd41b8f336bbcaa61e1c0f2550fb0ca0f8c07e307a13b33903"
+    },
+    {
+      "role": "geometry",
+      "path": "calibration/plans/p0-r4-geometry-accepted-v1.json",
+      "sha256": "bf0a0d1024b5aa4dcdeae924e4b0de0444e6e2dc722a35c6fb7a87da4ccd8622"
+    },
+    {
+      "role": "signal_mode",
+      "path": "calibration/plans/p0-r5-signal-mode-accepted-v1.json",
+      "sha256": "c767abeb0022a10da5146f1f049916e4d45bfd04733b679a07933da2467adbd4"
+    },
+    {
+      "role": "scoring_statistics_acceptance",
+      "path": "calibration/plans/p0-r6-scoring-statistics-accepted-v1.json",
+      "sha256": "c34b3bb14b304b8ba4b674ac11561489745865d89f549c50a64ef451ffc03009"
+    },
+    {
+      "role": "scoring_statistics_payload",
+      "path": "calibration/plans/p0-r6-scoring-statistics-candidate-v1.json",
+      "sha256": "10ac7a5adb91261e4e5b16cec191d3cd5cdd9b3868ab01197aa37c561df081b2"
+    }
+  ],
+  "required_database_fields": [
+    "config_version",
+    "normalization_version",
+    "signal_pipeline_version",
+    "test_geometry_version",
+    "created_date",
+    "input_sampling_rate_hz",
+    "resampling_tolerance_ms",
+    "timing_acceptance_policy",
+    "butterworth_order",
+    "cutoff_frequency_hz",
+    "submovement_start_deg_per_sec",
+    "submovement_end_deg_per_sec",
+    "refractory_period_ms",
+    "normalization_bounds_json",
+    "submovement_bounds_by_mode_json",
+    "consistency_tier_cutpoints_json",
+    "scoring_zero_tolerance",
+    "target_geometry_json",
+    "tracking_contract_json",
+    "confirmatory_contract_json"
+  ],
+  "freeze_rules": [
+    "All source paths and SHA-256 digests must match before a configuration can be built.",
+    "Every required calibration_configs field must be populated and no required value may be null.",
+    "Embedded JSON fields must use canonical sorted-key compact JSON and round-trip exactly.",
+    "The target-geometry and tracking-contract payloads must equal their accepted source contracts exactly.",
+    "The P0-R6 candidate payload is valid only through its accepted SHA-pinned envelope.",
+    "The P0-R3 owner waiver and failed strict-confirmation status must remain explicit.",
+    "Accepted configuration artifacts are immutable; overwrite, draft, incomplete, and mutated inputs are rejected."
+  ]
+}

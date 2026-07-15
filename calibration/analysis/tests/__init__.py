@@ -1,0 +1,1 @@
+"""Automated calibration-analysis fixtures."""

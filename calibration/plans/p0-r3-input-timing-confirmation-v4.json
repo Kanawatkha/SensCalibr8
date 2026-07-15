@@ -1,0 +1,29 @@
+{
+  "protocol_id": "sc8-p0-r1-protocol-v1",
+  "capture_plan_id": "sc8-p0-r3-input-timing-confirmation-v4",
+  "environment_id": "sc8-env-zulartan-wg903-native-v2",
+  "condition_id": "wg903-1600dpi-1000hz-native-wm-input",
+  "evidence_state": "confirmation",
+  "acceptance_owner": "project-owner",
+  "planned_repeat_count": 5,
+  "trace_duration_seconds": 30,
+  "execution_order": "sequential-repetitions-1-through-5-single-condition",
+  "controlled_motion_instruction": "Continuous figure-eight motion at a comfortable steady pace without lifting the mouse.",
+  "controlled_variables": {
+    "mouse_dpi": 1600,
+    "configured_polling_rate_hz": 1000,
+    "timestamp_source": "win32-wm-input-qpc",
+    "dedicated_raw_input_message_pump": true,
+    "selected_device_policy": "operator moves only SIGNO; select most active native raw device",
+    "capture_display_mode": "native-resolution borderless fullscreen",
+    "display_refresh_rate_hz": 144,
+    "adaptive_sync_policy": "operator-confirmed-off-before-capture",
+    "power_plan": "High performance",
+    "background_load_policy": "operator-confirmed-no-material-background-load",
+    "network_state": "offline",
+    "focus_required": true
+  },
+  "frozen_contract_id": "sc8-p0-r3-timing-contract-candidate-v2",
+  "freshness_rule": "All run IDs, trace IDs, and repetition artifacts must be new and must not occur in Pilot v3 or rejected Confirmation v3.",
+  "approval_basis": "Candidate v2 was calculated exclusively from Pilot v3 using a predeclared family-wise prediction method before Confirmation v4 capture."
+}

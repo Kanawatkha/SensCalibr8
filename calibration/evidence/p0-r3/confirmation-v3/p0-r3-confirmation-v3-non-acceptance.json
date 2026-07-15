@@ -1,0 +1,14 @@
+{
+  "decision": "rejected-candidate-contract",
+  "contract_id": "sc8-p0-r3-timing-contract-candidate-v1",
+  "confirmation_result": "calibration/evidence/p0-r3/confirmation-v3/p0-r3-confirmation-v3-result.json",
+  "confirmation_result_sha256": "2b725398eac2da57bdfaf1ee4580dc2d53704464cb9f3a5e2b3b4298aa0d7060",
+  "fresh_run_count": 5,
+  "accepted_run_count": 1,
+  "rejected_run_count": 4,
+  "integrity_and_identity_valid": true,
+  "timestamp_order_valid_for_all_runs": true,
+  "reason": "The unexpanded pilot-extrema envelope did not reproduce. Four runs exceeded the frozen median-rate and burst-fraction limits; two also exceeded the p99 single-cadence residual limit.",
+  "scientific_disposition": "Retain every artifact. Do not promote candidate v1, do not retune v1 from confirmation data, and do not reuse these runs as confirmation for another contract.",
+  "next_contract_derivation": "Candidate v2 uses only the five original Pilot v3 diagnostics with a predeclared Bonferroni-familywise prediction method. Confirmation v3 values are excluded from its calculations."
+}

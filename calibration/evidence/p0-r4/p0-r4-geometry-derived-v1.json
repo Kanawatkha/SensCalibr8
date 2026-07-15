@@ -1,0 +1,253 @@
+{
+  "accepted": true,
+  "analysis_runtime": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.13"
+  },
+  "analysis_version": "p0-r4-geometry-analysis-v1",
+  "derived": {
+    "arena_bounds": {
+      "maximum": [
+        10.0,
+        7.6,
+        20.0
+      ],
+      "minimum": [
+        -10.0,
+        -4.4,
+        -1.0
+      ]
+    },
+    "aspect_ratio": 1.7777777777777777,
+    "center_hit_area_ratio": 0.25,
+    "condition_sets": {
+      "close": [
+        {
+          "center_offset_px": 66.80796025899511,
+          "center_offset_world": 0.87488663525924,
+          "distance_deg": 5.0,
+          "family": "close",
+          "fitts_id": 3.736965594166206,
+          "size": "small",
+          "width_deg": 0.75
+        },
+        {
+          "center_offset_px": 66.80796025899511,
+          "center_offset_world": 0.87488663525924,
+          "distance_deg": 5.0,
+          "family": "close",
+          "fitts_id": 2.736965594166206,
+          "size": "medium",
+          "width_deg": 1.5
+        },
+        {
+          "center_offset_px": 66.80796025899511,
+          "center_offset_world": 0.87488663525924,
+          "distance_deg": 5.0,
+          "family": "close",
+          "fitts_id": 2.15200309344505,
+          "size": "large",
+          "width_deg": 2.25
+        },
+        {
+          "center_offset_px": 134.646540991784,
+          "center_offset_world": 1.7632698070846498,
+          "distance_deg": 10.0,
+          "family": "close",
+          "fitts_id": 4.7369655941662066,
+          "size": "small",
+          "width_deg": 0.75
+        },
+        {
+          "center_offset_px": 134.646540991784,
+          "center_offset_world": 1.7632698070846498,
+          "distance_deg": 10.0,
+          "family": "close",
+          "fitts_id": 3.736965594166206,
+          "size": "medium",
+          "width_deg": 1.5
+        },
+        {
+          "center_offset_px": 134.646540991784,
+          "center_offset_world": 1.7632698070846498,
+          "distance_deg": 10.0,
+          "family": "close",
+          "fitts_id": 3.15200309344505,
+          "size": "large",
+          "width_deg": 2.25
+        },
+        {
+          "center_offset_px": 204.61095504178027,
+          "center_offset_world": 2.679491924311227,
+          "distance_deg": 15.0,
+          "family": "close",
+          "fitts_id": 5.321928094887363,
+          "size": "small",
+          "width_deg": 0.75
+        },
+        {
+          "center_offset_px": 204.61095504178027,
+          "center_offset_world": 2.679491924311227,
+          "distance_deg": 15.0,
+          "family": "close",
+          "fitts_id": 4.321928094887363,
+          "size": "medium",
+          "width_deg": 1.5
+        },
+        {
+          "center_offset_px": 204.61095504178027,
+          "center_offset_world": 2.679491924311227,
+          "distance_deg": 15.0,
+          "family": "close",
+          "fitts_id": 3.736965594166206,
+          "size": "large",
+          "width_deg": 2.25
+        }
+      ],
+      "far": [
+        {
+          "center_offset_px": 277.9343970560073,
+          "center_offset_world": 3.6397023426620234,
+          "distance_deg": 20.0,
+          "family": "far",
+          "fitts_id": 5.7369655941662066,
+          "size": "small",
+          "width_deg": 0.75
+        },
+        {
+          "center_offset_px": 277.9343970560073,
+          "center_offset_world": 3.6397023426620234,
+          "distance_deg": 20.0,
+          "family": "far",
+          "fitts_id": 4.7369655941662066,
+          "size": "medium",
+          "width_deg": 1.5
+        },
+        {
+          "center_offset_px": 277.9343970560073,
+          "center_offset_world": 3.6397023426620234,
+          "distance_deg": 20.0,
+          "family": "far",
+          "fitts_id": 4.1520030934450505,
+          "size": "large",
+          "width_deg": 2.25
+        },
+        {
+          "center_offset_px": 440.87533498681677,
+          "center_offset_world": 5.773502691896257,
+          "distance_deg": 30.0,
+          "family": "far",
+          "fitts_id": 6.321928094887363,
+          "size": "small",
+          "width_deg": 0.75
+        },
+        {
+          "center_offset_px": 440.87533498681677,
+          "center_offset_world": 5.773502691896257,
+          "distance_deg": 30.0,
+          "family": "far",
+          "fitts_id": 5.321928094887363,
+          "size": "medium",
+          "width_deg": 1.5
+        },
+        {
+          "center_offset_px": 440.87533498681677,
+          "center_offset_world": 5.773502691896257,
+          "distance_deg": 30.0,
+          "family": "far",
+          "fitts_id": 4.7369655941662066,
+          "size": "large",
+          "width_deg": 2.25
+        },
+        {
+          "center_offset_px": 640.751984929091,
+          "center_offset_world": 8.390996311772799,
+          "distance_deg": 40.0,
+          "family": "far",
+          "fitts_id": 6.7369655941662066,
+          "size": "small",
+          "width_deg": 0.75
+        },
+        {
+          "center_offset_px": 640.751984929091,
+          "center_offset_world": 8.390996311772799,
+          "distance_deg": 40.0,
+          "family": "far",
+          "fitts_id": 5.7369655941662066,
+          "size": "medium",
+          "width_deg": 1.5
+        },
+        {
+          "center_offset_px": 640.751984929091,
+          "center_offset_world": 8.390996311772799,
+          "distance_deg": 40.0,
+          "family": "far",
+          "fitts_id": 5.1520030934450505,
+          "size": "large",
+          "width_deg": 2.25
+        }
+      ]
+    },
+    "crosshair_diameter_px": 4.0,
+    "focal_length_px": 763.6184800011154,
+    "horizontal_fov_deg": 103.0,
+    "maximum_target_extents_world": {
+      "horizontal_from_camera": 8.587371089486568,
+      "vertical_from_camera": 4.859451359263756
+    },
+    "micro_correction": {
+      "maximum_angular_offset_deg": 1.500295901168436,
+      "maximum_world_offset": 0.26191089560811553,
+      "minimum_angular_offset_deg": 0.3751543618607961,
+      "minimum_world_offset": 0.06547772390202888
+    },
+    "safe_viewport": {
+      "configured_vertical_offset_px": 356.0811451331997,
+      "horizontal_center_limit_px": 913.0044590731654,
+      "maximum_condition_horizontal_offset_px": 640.751984929091,
+      "vertical_bottom_center_limit_px": 493.00445907316544,
+      "vertical_top_center_limit_px": 461.00445907316544
+    },
+    "target_frame_rate_hz": 144,
+    "target_geometry": {
+      "large": {
+        "angular_diameter_deg": 2.25,
+        "projected_pixel_diameter": 29.99108185366915,
+        "projection_error_px": 0.0,
+        "reprojected_pixel_diameter": 29.99108185366915,
+        "world_diameter": 0.3927495554275395
+      },
+      "medium": {
+        "angular_diameter_deg": 1.5,
+        "projected_pixel_diameter": 19.992626964892803,
+        "projection_error_px": 0.0,
+        "reprojected_pixel_diameter": 19.992626964892803,
+        "world_diameter": 0.26181434169670176
+      },
+      "small": {
+        "angular_diameter_deg": 0.75,
+        "projected_pixel_diameter": 9.995885259889453,
+        "projection_error_px": 1.7763568394002505e-15,
+        "reprojected_pixel_diameter": 9.995885259889452,
+        "world_diameter": 0.13090156304068037
+      }
+    },
+    "target_plane_distance_world": 10.0,
+    "vertical_fov_deg": 70.53280043291679
+  },
+  "gates": {
+    "arena_contains_camera_and_targets": true,
+    "center_zone_valid": true,
+    "fitts_ids_positive_and_monotonic": true,
+    "fixed_crosshair_valid": true,
+    "frame_policy_frozen": true,
+    "horizontal_safe_viewport": true,
+    "joint_condition_counts": true,
+    "letterbox_policy_frozen": true,
+    "micro_projection_valid": true,
+    "projection_within_tolerance": true,
+    "target_sizes_distinct": true,
+    "vertical_safe_viewport": true
+  },
+  "source_geometry_version": "sc8-test-geometry-candidate-v1"
+}

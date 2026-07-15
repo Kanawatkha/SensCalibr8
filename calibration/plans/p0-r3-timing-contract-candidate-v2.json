@@ -1,0 +1,41 @@
+{
+  "contract_id": "sc8-p0-r3-timing-contract-candidate-v2",
+  "signal_pipeline_version": "sc8-signal-pipeline-candidate-v2",
+  "status": "candidate-frozen",
+  "input_sampling_rate_hz": 1000.0,
+  "resampling_tolerance_ms": 0.43251822850161387,
+  "filter_padlen_samples": 18,
+  "confirmation_required_run_count": 5,
+  "acceptance_envelope": {
+    "minimum_median_sampling_rate_hz": 997.4538729569023,
+    "maximum_median_sampling_rate_hz": 1006.8357184355203,
+    "maximum_median_absolute_deviation_ms": 0.06653463461157862,
+    "maximum_burst_interval_fraction": 0.0849851831868774,
+    "maximum_gap_interval_fraction": 0.22850524713073753
+  },
+  "pilot_source_run_ids": [
+    "20260715t0630447749738z-r1",
+    "20260715t0631193280677z-r2",
+    "20260715t0631538304273z-r3",
+    "20260715t0632258767104z-r4",
+    "20260715t0632592526448z-r5"
+  ],
+  "pilot_prediction_artifact": "calibration/evidence/p0-r3/pilot-v3/p0-r3-pilot-v3-prediction-contract-v2.json",
+  "pilot_prediction_artifact_sha256": "ceac959d61b6475ac39ebeeaa89eb2b75846e64571e1c0df1689bae3f980bb32",
+  "acceptance_method": {
+    "name": "bonferroni-familywise-single-future-observation-prediction",
+    "pilot_run_count": 5,
+    "future_run_count": 5,
+    "metric_count": 5,
+    "simultaneous_statement_count": 25,
+    "familywise_alpha": 0.05,
+    "degrees_of_freedom": 4,
+    "student_t_critical_value": 7.173,
+    "critical_value_cumulative_probability": 0.999,
+    "formula": "mean +/- t * sample_sd * sqrt(1 + 1 / pilot_n)",
+    "source": "NIST/SEMATECH Engineering Statistics Handbook: prediction limits, Bonferroni method, and Student-t critical-value table"
+  },
+  "supersedes": "sc8-p0-r3-timing-contract-candidate-v1",
+  "supersession_reason": "Candidate v1 used raw pilot extrema as future-run limits. Fresh Confirmation v3 rejected that brittle derivation. Candidate v2 is calculated from the original Pilot v3 data only; failed confirmation measurements are excluded from every bound.",
+  "filter_padlen_basis": "The approved fifth-order Butterworth design has three SOS sections and one first-order section. Applying the documented scipy.signal.sosfiltfilt default-padlen structure formula yields 18 samples; P0-R5 must verify this against the generated coefficients."
+}

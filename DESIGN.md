@@ -10,6 +10,8 @@ This file defines the visual and layout design for every screen and scene in Sen
 
 ### 1.1 Scene Layout
 
+The accepted `sc8-test-geometry-v1` layout is an unlit, shadow-free 20 x 12 x 21 world-unit room centered at `[0, 1.6, 9.5]`, viewed by a perspective camera at `[0, 1.6, 0]` with zero rotation and a 103-degree horizontal FOV. The test viewport is fixed to 16:9 at a 1920 x 1080 reference resolution; non-16:9 displays must letterbox the test viewport rather than alter FOV or target scale. The reference frame policy is 144 Hz with VSync and adaptive sync disabled during acceptance-bearing sessions.
+
 An enclosed box room (fully closed on all sides — floor, walls, and ceiling). All surfaces use a gray/white (or gray/dark-gray) checkerboard pattern, in the style of Aim Lab and KovaaK's.
 
 This is a deliberate choice for two reasons:
@@ -25,10 +27,16 @@ Do not add additional geometry, decorative objects, complex lighting, or shadows
 - Color: bright cyan, chosen for high contrast against the gray checkerboard background.
 - Size varies according to the Small / Medium / Large randomization required by Fitts's Law compliance (see `FEATURES.md`, Section 2.1). Do not use any color other than the defined cyan across size variants — only size should change, not color.
 
+- Small / Medium / Large angular diameters are fixed at 0.75 / 1.50 / 2.25 degrees on a target plane 10 world units from the camera, projecting to approximately 10 / 20 / 30 pixels at 1920 x 1080.
+- Close centers use 5 / 10 / 15 degree offsets; Far centers use 20 / 30 / 40 degree offsets. Each family must use all nine size-and-offset combinations. Vertical centers are limited to 25 degrees.
+- Keep every target fully inside a safe viewport with a 32-pixel edge margin and a 64-pixel top HUD reserve. The Center-Hit diagnostic radius is 50% of the target radius.
+- Close Flick targets remain hidden during the 500-1000 ms foreperiod. Far Flick and Micro-Correction may show the upcoming cyan target while the center reference is active, but target color must not change on activation; use reference disappearance and the minimal HUD state instead of a new target color.
+- Tracking target positions are evaluated from the accepted analytic path and high-resolution elapsed time. Render frames display that state but never integrate or advance the path themselves.
+
 ### 1.3 Crosshair
 
 - Style: a small dot.
-- Size: application-defined and fixed; the user cannot resize or restyle it.
+- Size: a fixed four-pixel filled dot; the user cannot resize or restyle it.
 - Color: selected by the user during profile creation from the supported high-contrast colors, distinct from both the background and the target color. Color is the only configurable crosshair property.
 - The crosshair configuration is locked per profile and does not change between test modes or sessions (see `FEATURES.md`, Section 2.2).
 
@@ -61,13 +69,15 @@ This covers every non-arena screen: Slot Selection, Setup, Dashboard, and Compar
 
 All menu/UI screens use a simple table/grid layout, similar to a spreadsheet. Do not build custom UI components, animated transitions, or complex visual chrome for these screens. The goal is functional clarity, not visual polish — development time should go toward the test engine and analysis layer, not menu aesthetics.
 
+The standalone application starts in a resizable 960 x 540 window and remembers the user's last menu-window position/size. Starting a test performs a timing/display preflight and automatically enters native-resolution `FullScreenWindow` (borderless fullscreen). F11 is an optional fullscreen toggle outside an active test; Escape pauses/interrupts an active test and returns to the previous windowed state. A display-mode change during active evidence capture invalidates that run. These values and controls are project-owner-approved product/UX decisions dated 2026-07-15, not measured arena constants.
+
 ### 2.2 Slot Selection Screen
 
 A grid or list of existing profile slots, each showing: profile name, last active date, and a delete action. A "Create New Slot" option is always visible. Selecting a slot proceeds to the Dashboard scoped to that profile.
 
 ### 2.3 Setup Screen
 
-A simple form-style table of fields matching the Physical Profile Setup fields defined in `FEATURES.md`, Section 1.2: Hardware DPI (with a link/button to trigger the Physical Ruler Test fallback), current in-game sensitivity, dominant hand, crosshair color, grip style, movement strategy, mousepad width/height, and ADS multiplier. Crosshair style and size are displayed as fixed application values rather than editable inputs. Use plain labeled input rows, arranged as a table — no multi-step wizard is required.
+A simple form-style table of fields matching the Physical Profile Setup fields defined in `FEATURES.md`, Section 1.2: Hardware DPI (with a link/button to trigger the Physical Ruler Test fallback), current in-game sensitivity, configured mouse polling rate in Hz, dominant hand, crosshair color, grip style, movement strategy, mousepad width/height, and ADS multiplier. Crosshair style and size are displayed as fixed application values rather than editable inputs. Use plain labeled input rows, arranged as a table — no multi-step wizard is required.
 
 ### 2.4 Dashboard Screen
 

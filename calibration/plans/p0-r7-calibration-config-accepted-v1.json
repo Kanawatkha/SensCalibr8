@@ -1,0 +1,38 @@
+{
+  "contract_id": "sc8-p0-r7-calibration-config-acceptance-v1",
+  "status": "accepted",
+  "accepted_date": "2026-07-15",
+  "config_contract_id": "sc8-calibration-config-v1",
+  "config_version": "calibration_config_v1",
+  "config_path": "calibration/plans/calibration-config-v1.json",
+  "config_sha256": "c618a3e50473b072b107d2e2926f4d05e7bbafa33bc04af8beb5eb5f775b3b2e",
+  "immutability_policy": "The exact configuration bytes identified by config_sha256 are the only accepted Calibration Configuration v1. Any edit requires a new config version and a new acceptance envelope.",
+  "acceptance_method": "SHA-pinned P0-R3 through P0-R6 source verification, exact 20-field calibration_configs projection, canonical embedded JSON round-trip, deterministic byte reproduction, worked regression fixtures, mutation/draft/incomplete rejection, and Python/Unity parity.",
+  "acceptance_summary": {
+    "database_fields_required": 20,
+    "database_fields_populated": 20,
+    "automated_gates": 20,
+    "automated_gates_passed": 20,
+    "python_total_tests": 72,
+    "python_failed_tests": 0,
+    "unity_total_tests": 41,
+    "unity_failed_tests": 0,
+    "unity_skipped_tests": 0,
+    "unity_inconclusive_tests": 0
+  },
+  "evidence": {
+    "freeze_plan_path": "calibration/plans/p0-r7-calibration-config-freeze-plan-v1.json",
+    "derived_path": "calibration/evidence/p0-r7/p0-r7-calibration-config-derived-v1.json",
+    "derived_sha256": "62223543c45de23ae10599a577931911c44b759a6fec9de870f9bba3816c05d8",
+    "unity_editmode_path": "calibration/evidence/p0-r7/p0-r7-unity-editmode-results-v1.xml",
+    "unity_editmode_sha256": "8b876156e0a30af7d64064bc3143a6caa4fc3e88551864608622dee97981a599",
+    "unity_version": "6000.5.3f1"
+  },
+  "timing_limitation": {
+    "acceptance": "accepted-by-project-owner-calibration-waiver",
+    "strict_confirmation_passed": false,
+    "statement": "The accepted operational timing contract does not relabel either rejected strict distribution candidate as passing and does not claim universal physical 1000 Hz delivery."
+  },
+  "phase_zero_exit": "passed",
+  "production_authorization": "Phase 0 configuration dependency is unblocked. Production code may consume only this SHA-pinned accepted configuration through a complete immutable loader; production Test Engine implementation has not yet begun."
+}
