@@ -23,6 +23,43 @@ This file defines the technology stack, system design, timer precision requireme
 
 **Python for Analysis.** Separating the analysis layer from the Unity engine allows independent iteration on statistical formulas (e.g. Performance Score weighting) without requiring changes to the test engine itself.
 
+### 1.2 Production Repository and Assembly Boundaries
+
+The production Unity project lives under `app/`; the Phase 0 calibration harness remains isolated under `calibration/harness/` and must never be referenced by a production assembly. The offline Python package lives under `analysis/`. The machine-readable toolchain contract is `config/production-environment-v1.json`, and repeatable local commands live under `scripts/production/`.
+
+Production assembly dependencies are directional:
+
+```
+SensCalibr8.Core
+    -> SensCalibr8.Data
+        -> SensCalibr8.Services
+            -> SensCalibr8.UI
+            -> SensCalibr8.TestLogic (+ Unity.InputSystem)
+```
+
+- `Core` contains engine-independent shared/domain contracts. It references neither Unity nor persistence.
+- `Data` is the only assembly permitted to implement SQLite access and references only `Core`.
+- `Services` owns application orchestration and calculations and may call `Data`; it remains engine-independent.
+- `UI` renders/forwards interaction and may call `Services`; it must not reference `Data` or calculate results.
+- `TestLogic` owns future test-runtime behavior and raw Input System integration; it may call `Services` but must not reference `Data` directly.
+- Python Analysis consumes future Data Layer exports only. It must not import Unity code or bypass the Data Layer with an independently managed production database connection.
+
+The supported baseline is Unity `6000.5.3f1` revision `c2eb47b3a2a9`, Input System `1.19.0`, Test Framework `1.7.0`, and Python `3.12.13`. Exact Python dependencies are pinned in `analysis/requirements.lock`. Changes require a new environment manifest version and a clean preflight/test/build run.
+
+### 1.3 Central Configuration Contracts
+
+Production configuration enters the application only through immutable Core contracts and Service-Layer loaders. `FrozenCalibrationConfigurationLoader` reads the P0-R7 acceptance envelope before the configuration bytes, verifies the pinned SHA-256 and accepted/immutable identity, and fails closed unless it can validate the complete 20-field `calibration_configs` projection, canonical embedded JSON, all scalar/embedded-contract version agreements, and all six frozen source hashes. `ResearchConstantsLoader` is the equivalent typed source for non-Phase-0 `RESEARCH.md` constants; Phase 0-owned scoring, geometry, signal, and protocol values remain in the SHA-pinned calibration configuration and are never duplicated. The Core contracts contain no Unity or database reference; the loaders perform no writes. Python exposes equivalent frozen dataclass readers, and both runtimes validate the shared `config/production-config-parity-v1.json` parity manifest. No feature may bypass this boundary by reading a calibration plan directly.
+
+### 1.4 SQLite Runtime and Migration Contract
+
+The production Data assembly uses SQLite's native C API through the project-owned `SqliteDatabaseConnection`; no ORM or SQL provider may be referenced outside `SensCalibr8.Data`. The supported Windows x86-64 runtime is provisioned from the pinned Unity 6000.5.3f1 editor installation by the production scripts. Its source path and SHA-256 are fixed in `config/production-environment-v1.json`. The generated `app/Assets/Plugins/sqlite3.dll` is a verified local dependency and is not stored in Git; setup, preflight, test, and build commands recreate it deterministically and fail closed on a hash mismatch.
+
+`SqliteConnectionFactory` is the only production connection entry point. It explicitly initializes the pinned SQLite build, opens the database, executes `PRAGMA foreign_keys = ON`, and verifies that enforcement is active before returning the connection. Versioned migrations are ordered by integer version, wrapped in transactions, and recorded in `schema_migrations` with migration name, SHA-256 checksum, and UTC application time. Migration 1 creates the complete schema below, its uniqueness/check constraints and query indexes, then sets `PRAGMA user_version = 1`. An already-applied migration whose name or checksum differs is an integrity failure, never an implicit rewrite.
+
+Database bootstrap stores the exact accepted 20-field frozen calibration projection transactionally. Reopening is idempotent; an existing row whose value differs from the accepted configuration is rejected rather than updated.
+
+P1-R4 exposes typed Data-layer repositories for profiles, cycles, protocol candidates with source provenance, protocol batteries, accepted calibration-configuration identity, and completed session captures. A `SessionCaptureRepository` transaction persists the session header, mandatory timing diagnostics, shot evidence, Tracking trial/window evidence, and raw mouse samples as one aggregate; any failed child write rolls back the entire aggregate so the caller can preserve its in-memory capture. SQL execution methods are internal to the Data assembly (with test-only friend visibility), preventing Services, UI, Test Logic, and Python from issuing raw production SQL. `DataAccessException` communicates operation, classified failure kind, and a recovery action to an injected `IDataFailureReporter`; it does not render UI or erase in-memory capture state. Product validation, adaptation finalization, scoring, and UI recovery presentation remain later-phase responsibilities.
+
 ---
 
 ## 2. Timer Precision Requirement

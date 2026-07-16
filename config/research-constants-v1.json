@@ -1,0 +1,24 @@
+{
+  "schema_version": "sc8-research-constants-v1",
+  "status": "accepted",
+  "immutable": true,
+  "constants_version": "sc8-research-constants-v1",
+  "sources": {
+    "primary": "RESEARCH.md",
+    "phase_zero_constants": "calibration_config_v1"
+  },
+  "general": {
+    "psa_baseline_edpi": 280.0,
+    "edpi_floor": 160.0,
+    "cm_per_inch": 2.54,
+    "degrees_per_turn": 360.0,
+    "valorant_yaw_multiplier": 0.0022,
+    "fitts_distance_multiplier": 2.0,
+    "headshot_reference_ceiling_percent": 35.0,
+    "outlier_sample_sd_multiplier": 3.0,
+    "grip_tension_min_percent": 60.0,
+    "grip_tension_max_percent": 80.0,
+    "excessive_grip_tension_percent": 100.0,
+    "wrist_warning_edpi_exclusive_upper": 200.0
+  }
+}

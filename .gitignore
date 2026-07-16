@@ -20,6 +20,7 @@ __pycache__/
 htmlcov/
 .venv/
 venv/
+artifacts/
 
 # .NET build and package outputs
 [Bb]in/
@@ -51,3 +52,8 @@ calibration/harness/*test-results*.xml
 
 # Keep structured calibration evidence (JSON/XML/PNG/MD), not verbose runner logs.
 calibration/evidence/**/*.log
+
+# Production-local verification/build outputs
+app/TestResults/
+app/Assets/Plugins/sqlite3.dll
+app/Assets/Plugins/sqlite3.dll.meta

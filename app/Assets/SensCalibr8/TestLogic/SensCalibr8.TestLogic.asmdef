@@ -1,0 +1,18 @@
+{
+  "name": "SensCalibr8.TestLogic",
+  "rootNamespace": "SensCalibr8.TestLogic",
+  "references": [
+    "SensCalibr8.Core",
+    "SensCalibr8.Services",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

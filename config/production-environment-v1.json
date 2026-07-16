@@ -1,0 +1,45 @@
+{
+  "schema_version": "sc8-production-environment-v1",
+  "status": "pinned",
+  "offline_runtime_required": true,
+  "unity": {
+    "editor_version": "6000.5.3f1",
+    "editor_revision": "c2eb47b3a2a9",
+    "project_path": "app",
+    "target_platform": "Windows-x86_64",
+    "input_system_version": "1.19.0",
+    "test_framework_version": "1.7.0",
+    "active_input_handler": "input-system-package-only"
+  },
+  "python": {
+    "version": "3.12.13",
+    "analysis_project_path": "analysis",
+    "requirements_lock_path": "analysis/requirements.lock",
+    "dependencies": {
+      "matplotlib": "3.11.0",
+      "numpy": "2.3.5",
+      "pandas": "3.0.1"
+    }
+  },
+  "calibration": {
+    "config_version": "calibration_config_v1",
+    "config_path": "calibration/plans/calibration-config-v1.json",
+    "config_sha256": "c618a3e50473b072b107d2e2926f4d05e7bbafa33bc04af8beb5eb5f775b3b2e",
+    "acceptance_path": "calibration/plans/p0-r7-calibration-config-accepted-v1.json"
+  },
+  "sqlite": {
+    "provider": "native-sqlite3-c-api",
+    "provisioning": "copy-from-pinned-unity-editor-runtime",
+    "native_unity_relative_source": "Data/PlaybackEngines/WebGLSupport/BuildTools/Emscripten/python/DLLs/sqlite3.dll",
+    "native_project_plugin_path": "app/Assets/Plugins/sqlite3.dll",
+    "native_sha256": "441363c5b15394ca4b117200800722d48042c04407d03aac0d1a0a967b7c68e4"
+  },
+  "layer_policy": {
+    "core": [],
+    "data": ["core"],
+    "services": ["core", "data"],
+    "test_logic": ["core", "services", "unity_input_system"],
+    "ui": ["core", "services"],
+    "analysis": ["data_exports_only"]
+  }
+}

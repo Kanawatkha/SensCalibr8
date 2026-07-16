@@ -1,0 +1,16 @@
+{
+  "schema_version": "sc8-production-config-parity-v1",
+  "status": "accepted",
+  "config_path": "calibration/plans/calibration-config-v1.json",
+  "acceptance_envelope_path": "calibration/plans/p0-r7-calibration-config-accepted-v1.json",
+  "config_sha256": "c618a3e50473b072b107d2e2926f4d05e7bbafa33bc04af8beb5eb5f775b3b2e",
+  "record_field_count": 20,
+  "config_version": "calibration_config_v1",
+  "formula_version": "sc8-performance-score-v1",
+  "normalization_version": "sc8-normalization-v1",
+  "signal_pipeline_version": "sc8-signal-pipeline-v1",
+  "test_geometry_version": "sc8-test-geometry-v1",
+  "mode_contract_version": "sc8-mode-contract-v1",
+  "consistency_tier_version": "sc8-consistency-tier-v1",
+  "confirmatory_contract_version": "sc8-confirmatory-v1"
+}

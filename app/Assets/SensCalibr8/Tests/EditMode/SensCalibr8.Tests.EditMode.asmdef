@@ -1,0 +1,26 @@
+{
+  "name": "SensCalibr8.Tests.EditMode",
+  "rootNamespace": "SensCalibr8.Tests",
+  "references": [
+    "SensCalibr8.Core",
+    "SensCalibr8.Data",
+    "SensCalibr8.Services",
+    "SensCalibr8.TestLogic",
+    "SensCalibr8.UI",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

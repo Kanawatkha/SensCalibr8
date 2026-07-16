@@ -1,0 +1,16 @@
+{
+  "name": "SensCalibr8.Data",
+  "rootNamespace": "SensCalibr8.Data",
+  "references": [
+    "SensCalibr8.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}
