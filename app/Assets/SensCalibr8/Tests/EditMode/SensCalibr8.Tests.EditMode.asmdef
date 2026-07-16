@@ -6,6 +6,7 @@
     "SensCalibr8.Data",
     "SensCalibr8.Services",
     "SensCalibr8.TestLogic",
+    "SensCalibr8.Integration",
     "SensCalibr8.UI",
     "Unity.InputSystem"
   ],

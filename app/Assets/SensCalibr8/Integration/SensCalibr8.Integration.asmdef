@@ -1,0 +1,19 @@
+{
+  "name": "SensCalibr8.Integration",
+  "rootNamespace": "SensCalibr8.Integration",
+  "references": [
+    "SensCalibr8.Core",
+    "SensCalibr8.Data",
+    "SensCalibr8.Services",
+    "SensCalibr8.TestLogic"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -8,8 +8,20 @@ namespace SensCalibr8.Data.Migrations
         {
             new SchemaMigration(1, "initial_schema", InitialSchemaSql),
             new SchemaMigration(2, "active_profile_state", ActiveProfileStateSql),
-            new SchemaMigration(3, "session_battery_lifecycle", SessionBatteryLifecycleSql)
+            new SchemaMigration(3, "session_battery_lifecycle", SessionBatteryLifecycleSql),
+            new SchemaMigration(4, "signed_flick_error", SignedFlickErrorSql),
+            new SchemaMigration(5, "far_preview_timestamp", FarPreviewTimestampSql)
         };
+
+        private const string FarPreviewTimestampSql = @"
+ALTER TABLE shots ADD COLUMN preview_timestamp REAL;
+PRAGMA user_version = 5;
+";
+
+        private const string SignedFlickErrorSql = @"
+ALTER TABLE shots ADD COLUMN signed_overflick_underflick_deg REAL;
+PRAGMA user_version = 4;
+";
 
         private const string SessionBatteryLifecycleSql = @"
 CREATE TABLE session_attempts (

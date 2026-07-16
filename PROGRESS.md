@@ -23,11 +23,62 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 ## Current Execution State
 
-- Active phase: **Phase 3 — Production Test Engine Core (Completed)**
-- Last completed round: **P3-R7 — Production Test Engine acceptance**
-- Active round: **P3-R7 — Production Test Engine acceptance (Completed)**
-- Next planned round: **P4-R1 — Close Flick (Awaiting explicit authorization)**
-- Production Test Engine status: **Shared production engine accepted; four mode implementations remain in Phase 4**
+- Active phase: **Phase 4 — Four Test Modes (In Progress)**
+- Last completed round: **P4-R6 — Mode acceptance and reproducibility**
+- Active round: **P4-R6 — Mode acceptance and reproducibility (Completed)**
+- Next planned round: **Phase 5 — Protocol and Scoring (Awaiting explicit authorization)**
+- Production Test Engine status: **All four modes are implemented, integrated, reproducible, and accepted; scoring/protocol execution remains**
+
+### Phase 4 / P4-R6: Mode acceptance and reproducibility
+
+- Acceptance coverage: added a production-mode acceptance fixture that instantiates the real Close Flick, Far Flick, Tracking, and Micro-Correction implementations through `ProductionBatteryTestModeFactory`. It verifies that repeated generation with the same profile/cycle/phase/mode/repetition context reproduces the same audit seed and every target condition.
+- Confound control: every generated stationary target is checked against the frozen target diameter, edge margin, and top HUD reserve. Existing arena acceptance continues to verify fixed 16:9 letterboxing, camera/FOV, unlit cyan sphere geometry, and fixed four-pixel crosshair behavior.
+- Lifecycle safety: every production mode is checked for terminal cancellation and rejection of capture/recovery after cancellation. A failed Close Flick completion is checked to require fault recovery followed by a fresh start before capture can resume.
+- Scope boundary: the production factory is verified to expose no score/Winner surface; score calculation remains outside the Test Engine and is deferred to Phase 5. The approved crosshair palette rejects unsupported colors and preserves fixed style/size.
+- Test results: Unity EditMode **151/151 passed**; Windows production build passed (`SensCalibr8.exe`, 667648 bytes); calibration analysis regression **72/72 passed**; `git diff --check` passed; production-source scan found no legacy `Time.time` or `Input.GetAxis` usage.
+- Result: **P4-R6 complete; Phase 4 exit gate passed**. No Git operation was performed.
+
+### Phase 4 / P4-R5: Cross-mode battery integration
+
+- Implementation: added the `SensCalibr8.Integration` assembly for workflow composition requiring both engine behavior and persistence contracts, without allowing `TestLogic` to reference `Data` directly. `CrossModeBatteryWorkflow` creates one counterbalanced four-mode plan for a cycle/candidate/battery, exposes only the opaque blind label and ordered modes, and uses the production factory to create the existing Close Flick, Far Flick, Tracking, and Micro-Correction modes.
+- Integrity: one active mode is permitted at a time; each mode can run exactly once in the deterministic order; duplicate completion is impossible after the four-mode plan is exhausted. Each session start carries one accepted calibration identity and a per-mode deterministic audit. Completion requires the mode state machine to have completed and reported before the capture can enter the transactional persistence boundary.
+- Evidence boundary: the workflow accepts only mode-appropriate completed capture aggregates—30 shot rows and no Tracking rows for each shot mode, or 18 Tracking trials plus 108 windows and no shot rows for Tracking. All capture sensitivity values must equal the selected candidate and all pre-finalization adaptation flags must be null. Failed timing, lineage mismatch, or incomplete mode evidence fail closed; no score, Winner, or derived ranking is calculated here.
+- Test results: Unity EditMode **144/144 passed**; Windows production build passed (`SensCalibr8.exe`, 667648 bytes); calibration analysis regression **72/72 passed**; `git diff --check` passed; a production-source scan found no legacy `Time.time` or `Input.GetAxis` usage.
+- Result: **P4-R5 complete**. No scoring, protocol selection, or Git operation was performed.
+
+### Phase 4 / P4-R4: Micro-Correction
+
+- Implementation: added `MicroCorrectionMode` under the shared `ITestMode` lifecycle. It consumes the deterministic 30-opportunity Small-target sequence, verifies every radial center offset against the frozen 5–20 px contract, starts Correction Time at center-reference activation, resolves one click or the frozen timeout, converts the pixel target center to angular coordinates, and retains Final Precision Error plus Center-Hit without scoring.
+- Signal processing: added a configuration-driven `SubmovementSignalProcessor` that requires passed timing diagnostics, keeps detected gaps split, rejects short segments, applies the accepted odd-padded forward/backward SOS filter to both angular axes, derives first-difference Euclidean angular velocity, applies the inclusive 8 deg/s onset, strict-below 4 deg/s end, and less-than-80-ms refractory merge rules. Hits require eligible signal evidence; miss-clicks/timeouts retain null counts and raw traces remain separate.
+- Metric interpretation: the source names Micro-Adjustment Count and Submovement Count but defines only the approved corrective-movement detector. Both Micro hit fields therefore preserve the same accepted event count instead of inventing a second algorithm; this is explicitly documented for future versioning.
+- Persistence: added a Core evidence DTO and Services mapper for preview/activation/movement/resolution timing, pixel initial offset, angular final aim/error, Center-Hit, Micro/Submovement counts, and null adaptation state.
+- Test results: Unity EditMode **140/140 passed**; Windows production build passed (`SensCalibr8.exe`, 667648 bytes); calibration analysis regression **72/72 passed**; static render-frame/legacy-input scan found no matches; `git diff --check` passed.
+- Result: **P4-R4 complete**. No scoring, protocol selection, or Git operation was performed.
+
+### Phase 4 / P4-R3: Tracking
+
+- Implementation: added `TrackingMode` under the shared `ITestMode` lifecycle. It loads the accepted mode/geometry configuration, consumes the deterministic 18-trial sequence, evaluates the Linear, Curved, and Variable-Speed target paths analytically from elapsed high-resolution time, and never advances target state from render frames.
+- Capture/metrics: each six-second trial requires strictly increasing, boundary-covering aim samples. Raw radial target-center error is preserved separately as JSON evidence. The mode clips each sample interval into the frozen six half-open one-second windows and stores interval-weighted Time-on-Target plus RMS Tracking Deviation; no score is calculated.
+- Persistence: `TrackingEvidencePersistenceMapper` maps trials and windows through the existing repository records. It leaves `is_adaptation_trial` null so the P3-R5 transaction finalizes the first complete block only after the session has been saved.
+- Test results: Unity EditMode **134/134 passed**; Windows production build passed (`SensCalibr8.exe`, 667648 bytes); calibration analysis regression **72/72 passed**; `git diff --check` passed.
+- Result: **P4-R3 complete**. No scoring, protocol selection, or Git operation was performed.
+
+### Phase 4 / P4-R2: Far Flick
+
+- Implementation: added `FarFlickMode` under the shared `ITestMode` lifecycle. Each deterministic Far target becomes visible as a preview, begins the measured contract only at center-reference activation, records the first verified 8 deg/s movement onset, and then resolves a click or timeout.
+- Metrics retained without scoring: preview timestamp, activation timestamp, optional movement-onset timestamp, nullable raw Travel Time when onset is absent, hit/miss/timeout disposition, final aim position, signed horizontal aim error, Final Precision Error, and Center-Hit diagnostic.
+- Persistence: migration 5 adds nullable `shots.preview_timestamp`. For Far rows, `spawn_timestamp` is the center-reference activation that starts Travel Time; `preview_timestamp` preserves the earlier visible-preview event; and `first_mouse_movement_timestamp` remains null when no onset was verified. The P5 scoring fallback may later apply its accepted ceiling without fabricating a raw timestamp.
+- Test results: Unity EditMode **129/129 passed**; Windows production build passed; calibration analysis regression **72/72 passed**; `git diff --check` passed.
+- Result: **P4-R2 complete**. No scoring, protocol selection, or Git operation was performed.
+
+### Phase 4 / P4-R1: Close Flick
+
+- Implementation: added `CloseFlickMode` under the shared `ITestMode` lifecycle. It consumes only frozen sequence/geometry/mode-contract values; drives 30 deterministic Close conditions; exposes each condition's hidden foreperiod; records target-visible, optional first movement, click, and timeout evidence; and rejects invalid ordering, malformed metadata, early timeout, or late click.
+- Metrics retained without scoring: target-visible-to-resolution time, hit/miss/timeout disposition, final aim position, raw signed horizontal aim error, Final Precision Error, and Center-Hit diagnostic. The signed field is raw `final_aim_azimuth_deg - target_center_azimuth_deg`; it has no score or sensitivity adjustment role.
+- Persistence: migration 4 adds nullable `shots.signed_overflick_underflick_deg`; `CloseFlickEvidencePersistenceMapper` maps completed opportunities through the repository boundary while leaving `is_adaptation_shot` null for P3-R5 transactional finalization.
+- Test results: Unity EditMode **124/124 passed**; Windows production build passed; calibration analysis regression **72/72 passed**; `git diff --check` passed.
+- Issues resolved: initially placed a Test Logic dependent mapper in Services; corrected it by moving the shared evidence DTO to Core, preserving the one-way Core -> Services -> Test Logic dependency direction.
+- Result: **P4-R1 complete**. No scoring, protocol selection, or Git operation was performed.
 
 ### Phase 3 / P3-R6: Core-engine verification
 

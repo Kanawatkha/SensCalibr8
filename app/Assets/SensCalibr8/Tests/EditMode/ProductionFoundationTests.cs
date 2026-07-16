@@ -68,6 +68,7 @@ namespace SensCalibr8.Tests
             AssertReferences("Data", new[] { "SensCalibr8.Core" }, true);
             AssertReferences("Services", new[] { "SensCalibr8.Core", "SensCalibr8.Data" }, true);
             AssertReferences("TestLogic", new[] { "SensCalibr8.Core", "SensCalibr8.Services", "Unity.InputSystem" }, false);
+            AssertReferences("Integration", new[] { "SensCalibr8.Core", "SensCalibr8.Data", "SensCalibr8.Services", "SensCalibr8.TestLogic" }, false);
             AssertReferences("UI", new[] { "SensCalibr8.Core", "SensCalibr8.Services" }, false);
         }
 

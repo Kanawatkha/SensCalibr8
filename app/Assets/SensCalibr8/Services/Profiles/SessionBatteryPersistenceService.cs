@@ -18,6 +18,7 @@ namespace SensCalibr8.Services.Profiles
 
         public SessionAttemptRecord Begin(SessionAttemptStartRecord start)
         { RequireConfiguration(start); return lifecycle.Begin(start); }
+        public long RequireAcceptedConfigurationId() => configurations.RequireId(configuration.ConfigVersion.Value);
         public SessionAttemptRecord Pause(SessionAttemptRecord attempt,string reason,string date) => lifecycle.Transition(attempt,"paused",Require(reason),Require(date));
         public SessionAttemptRecord Resume(SessionAttemptRecord attempt,string reason,string date) => lifecycle.Transition(attempt,"capturing",Require(reason),Require(date));
         public SessionAttemptRecord Cancel(SessionAttemptRecord attempt,string reason,string date) => lifecycle.Transition(attempt,"cancelled",Require(reason),Require(date));

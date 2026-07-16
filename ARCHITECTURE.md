@@ -35,6 +35,7 @@ SensCalibr8.Core
         -> SensCalibr8.Services
             -> SensCalibr8.UI
             -> SensCalibr8.TestLogic (+ Unity.InputSystem)
+                -> SensCalibr8.Integration
 ```
 
 - `Core` contains engine-independent shared/domain contracts. It references neither Unity nor persistence.
@@ -42,6 +43,7 @@ SensCalibr8.Core
 - `Services` owns application orchestration and calculations and may call `Data`; it remains engine-independent.
 - `UI` renders/forwards interaction and may call `Services`; it must not reference `Data` or calculate results.
 - `TestLogic` owns future test-runtime behavior and raw Input System integration; it may call `Services` but must not reference `Data` directly.
+- `Integration` owns workflow composition that must coordinate Test Logic, Services, and Data contracts. It may reference those layers, but it must not implement raw input, direct SQLite access, scoring, or UI rendering.
 - Python Analysis consumes future Data Layer exports only. It must not import Unity code or bypass the Data Layer with an independently managed production database connection.
 
 The supported baseline is Unity `6000.5.3f1` revision `c2eb47b3a2a9`, Input System `1.19.0`, Test Framework `1.7.0`, and Python `3.12.13`. Exact Python dependencies are pinned in `analysis/requirements.lock`. Changes require a new environment manifest version and a clean preflight/test/build run.
@@ -265,6 +267,7 @@ shots (
     target_size TEXT NOT NULL,
     spawn_position TEXT NOT NULL,
     spawn_timestamp REAL NOT NULL,
+    preview_timestamp REAL,          -- Far preview visibility; NULL for modes without a preview stage
     first_mouse_movement_timestamp REAL,
     resolution_timestamp REAL NOT NULL,
     hit_timestamp REAL,
@@ -279,7 +282,8 @@ shots (
     micro_adjustment_count INTEGER,
     submovement_count INTEGER,       -- computed per algorithm in RESEARCH.md, Section 5
     final_precision_error REAL NOT NULL,
-    is_center_hit BOOLEAN NOT NULL    -- diagnostic only; never enters Performance Score directly
+    is_center_hit BOOLEAN NOT NULL,   -- diagnostic only; never enters Performance Score directly
+    signed_overflick_underflick_deg REAL -- raw horizontal aim error: final azimuth minus target-center azimuth
 )
 
 tracking_data (
@@ -435,7 +439,9 @@ application_state (
 - `protocol_batteries.sensitivity_value` is the authoritative tested value for all child sessions. Any redundant sensitivity value recorded in shot or Tracking rows must match the parent battery exactly.
 - Fatigue is evaluated only after session capture and adaptation finalization. `fatigue_score_change_percentage` stores the first-half versus second-half Performance Score change, and `fatigue_flag` is true only for a decline greater than 15%; the flag must not exclude that session from Winner selection.
 - `shots.is_center_hit` supports Center-Hit Percentage as a diagnostic only. Under `sc8-test-geometry-v1`, the center-zone radius is 50% of the projected target radius (25% of projected target area) and is versioned through `target_geometry_json`.
-- Every resolved `shots` row stores `resolution_timestamp`, `outcome_reason`, `final_aim_position`, and `final_precision_error`, including miss-clicks and timeouts. This makes the 15-observation P0-R6 Precision/Consistency aggregate complete without pretending a miss has zero error. `hit_timestamp`/`hit_position` remain nullable because they describe actual hits; `submovement_count` remains null on misses. For Far missing-onset cases, `first_mouse_movement_timestamp` remains null and the scoring layer applies the explicit 1500 ms fallback without writing a fabricated timestamp.
+- Every resolved `shots` row stores `resolution_timestamp`, `outcome_reason`, `final_aim_position`, and `final_precision_error`, including miss-clicks and timeouts. This makes the 15-observation P0-R6 Precision/Consistency aggregate complete without pretending a miss has zero error. `hit_timestamp`/`hit_position` remain nullable because they describe actual hits; `submovement_count` remains null on misses. For Far, `preview_timestamp` preserves visible-preview timing while `spawn_timestamp` is the center-reference activation timestamp that starts the Travel-Time contract. For Far missing-onset cases, `first_mouse_movement_timestamp` remains null and the scoring layer applies the explicit 1500 ms fallback without writing a fabricated timestamp.
+- For Micro-Correction, `initial_offset_distance` is the frozen reference-pixel radial offset while `final_precision_error` remains angular degrees. A hit requires timing-valid, filter-eligible `sc8-signal-pipeline-v1` evidence; miss-clicks/timeouts retain null `micro_adjustment_count` and `submovement_count`. Because the specification authorizes only one corrective-movement detector, both count columns store that same accepted event count for a Micro hit rather than introducing an unversioned second algorithm.
+- `shots.signed_overflick_underflick_deg` preserves raw Close/Far horizontal aim error as `final_aim_azimuth_deg - target_center_azimuth_deg`. Positive and negative values are coordinate directions only; any later Overflick/Underflick presentation must label them relative to the target's intended horizontal movement direction without changing the stored value.
 - `mouse_samples` preserves timestamped raw deltas and their calibrated angular representation. Filtering and angular velocity are derived analysis outputs and must not overwrite raw samples.
 - `calibration_configs.input_sampling_rate_hz` is the canonical 1000 Hz uniform processing grid frozen by P0-R3, not a claim that every physical mouse reports at that rate. `timing_acceptance_policy` is `integrity-modal-cadence`: timestamp order and nominal modal cadence are hard gates, while burst/gap counts remain diagnostics and gaps split resampling segments. `session_timing_diagnostics` stores the user's configured polling-rate metadata plus automatically measured cadence for every session. Manufacturer/model/firmware may be retained as optional audit metadata but must not participate in scoring or block profile creation.
 - `shots.is_outlier` is a denormalized any-metric indicator only. `outlier_flags` is authoritative and stores one metric-level audit record per flagged observation. Statistical flags default to inclusion; `excluded_from_authoritative_score` may be true only with a separately confirmed `is_data_quality_error` and documented reason.
