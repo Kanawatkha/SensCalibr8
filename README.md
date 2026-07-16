@@ -5,8 +5,8 @@ SensCalibr8 is an offline Unity/C#/SQLite/Python desktop application for structu
 ## Current Status
 
 - Phase 0 calibration is complete and frozen as `calibration_config_v1`.
-- Phase 1 production foundation, immutable configuration contracts, SQLite schema/migrations, and repository transaction boundary are established under `app/`, `analysis/`, `config/`, and `scripts/production/`.
-- Product profile workflows, UI, scoring, and Test Engine behavior are intentionally deferred to their planned rounds.
+- Phase 1 production foundation and Data Layer are complete. Phase 2 calculation/input-validation, profile lifecycle, slot/setup UI, persistent lifecycle guards, informational ergonomic warnings, and the Dashboard shell are established under the engine-independent Services assembly.
+- Scoring and Test Engine behavior remain intentionally deferred to their planned rounds.
 
 ## Start Here
 

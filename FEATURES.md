@@ -28,7 +28,7 @@ During profile creation, the user provides:
 - Current in-game sensitivity, stored for comparison with the calculated PSA baseline
 - Configured mouse polling rate in Hz, entered by the user as supporting session metadata; it does not replace automatic cadence measurement
 - Dominant hand
-- Crosshair color (selected once during profile creation and locked for the lifetime of the profile — see Section 2.2 below). Dot style and dot size are fixed by the application and are not user-configurable.
+- Crosshair color (selected once during profile creation and locked for the lifetime of the profile — see Section 2.2 below) from the approved palette: Yellow `#FFE600`, Magenta `#FF00FF`, Red `#FF3B30`, or Orange `#FF9500`. Dot style and dot size are fixed by the application and are not user-configurable.
 - Grip style (Fingertip / Palm / Claw / Hybrid) — descriptive field only, stored for the user's own reference, never used in any calculation
 - Movement strategy (Wrist / Arm / Hybrid) — descriptive field only, same restriction as above
 - Mousepad width and height in centimeters — used only for Mousepad Constraint Validation (see `RESEARCH.md`, Section 9)
@@ -59,7 +59,7 @@ Close Flick and Far Flick must vary Small / Medium / Large together with distanc
 
 ### 2.2 Crosshair Consistency
 
-The crosshair uses an application-fixed dot style and dot size. During profile creation, the user may select only a high-contrast color; that selected color is then locked for the entire lifetime of the profile. This eliminates a confounding variable unrelated to sensitivity itself. The selected color is stored in `profiles.crosshair_config` and must not change between test sessions or test modes.
+The crosshair uses an application-fixed dot style and dot size. During profile creation, the user may select only Yellow `#FFE600`, Magenta `#FF00FF`, Red `#FF3B30`, or Orange `#FF9500`; the selected color is then locked for the entire lifetime of the profile. This eliminates a confounding variable unrelated to sensitivity itself. The selected hex value is stored in `profiles.crosshair_config` and must not change between test sessions or test modes.
 
 ### 2.3 Per-Mode Performance Score Storage
 

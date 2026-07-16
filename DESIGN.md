@@ -37,7 +37,7 @@ Do not add additional geometry, decorative objects, complex lighting, or shadows
 
 - Style: a small dot.
 - Size: a fixed four-pixel filled dot; the user cannot resize or restyle it.
-- Color: selected by the user during profile creation from the supported high-contrast colors, distinct from both the background and the target color. Color is the only configurable crosshair property.
+- Color: selected by the user during profile creation from this project-owner-approved high-contrast palette: Yellow `#FFE600`, Magenta `#FF00FF`, Red `#FF3B30`, or Orange `#FF9500`. These warm saturated colors remain distinct from the fixed cyan target and grayscale arena. Color is the only configurable crosshair property.
 - The crosshair configuration is locked per profile and does not change between test modes or sessions (see `FEATURES.md`, Section 2.2).
 
 ### 1.4 First-Person View
@@ -77,7 +77,7 @@ A grid or list of existing profile slots, each showing: profile name, last activ
 
 ### 2.3 Setup Screen
 
-A simple form-style table of fields matching the Physical Profile Setup fields defined in `FEATURES.md`, Section 1.2: Hardware DPI (with a link/button to trigger the Physical Ruler Test fallback), current in-game sensitivity, configured mouse polling rate in Hz, dominant hand, crosshair color, grip style, movement strategy, mousepad width/height, and ADS multiplier. Crosshair style and size are displayed as fixed application values rather than editable inputs. Use plain labeled input rows, arranged as a table — no multi-step wizard is required.
+A simple form-style table of fields matching the Physical Profile Setup fields defined in `FEATURES.md`, Section 1.2: Hardware DPI (with a link/button to trigger the Physical Ruler Test fallback), current in-game sensitivity, configured mouse polling rate in Hz, dominant hand, crosshair color, grip style, movement strategy, mousepad width/height, and ADS multiplier. Crosshair color is a palette-only choice: Yellow `#FFE600`, Magenta `#FF00FF`, Red `#FF3B30`, or Orange `#FF9500`; free-form colors are not accepted. Crosshair style and size are displayed as fixed application values rather than editable inputs. Use plain labeled input rows, arranged as a table — no multi-step wizard is required.
 
 ### 2.4 Dashboard Screen
 

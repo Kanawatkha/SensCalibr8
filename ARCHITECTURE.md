@@ -395,6 +395,12 @@ injury_risk_flags (
     edpi_at_trigger REAL NOT NULL,
     acknowledged BOOLEAN NOT NULL DEFAULT 0
 )
+
+application_state (
+    state_key TEXT PRIMARY KEY,      -- currently the singleton 'active_profile'
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    updated_date TEXT NOT NULL
+)
 ```
 
 ### 4.1 Schema Notes
@@ -418,7 +424,8 @@ injury_risk_flags (
 - `protocol_batteries.purpose` separates exploratory data from fresh confirmatory data and prevents reuse of ranking batteries as confirmation evidence.
 - `significance_tests` stores the complete paired confirmatory decision. `significance_test_pairs` links every paired score back to the two source batteries. Test method, alternative, alpha, confidence interval, sample size, versions, and tie/winner result are mandatory for auditability.
 - Under `sc8-confirmatory-v1`, `significance_test_pairs` must contain exactly 10 complete fresh pairs with pair indices 1-10, five A-first and five B-first. Each linked battery score is the unweighted mean of exactly four complete mode scores. The analysis enumerates all 1024 sign assignments with the accepted 1e-12 score-point inclusive-extremeness comparison guard; interrupted attempts remain raw evidence but do not receive a pair row until both batteries complete. The 95% Student-t interval is reported uncertainty, while the exact p-value alone controls Winner versus tie.
-- `crosshair_config` stores only the high-contrast color selected at profile creation. Dot style and dot size are fixed by the application and must not be stored as user-editable settings.
+- `crosshair_config` stores only the approved high-contrast hex color selected at profile creation: `#FFE600`, `#FF00FF`, `#FF3B30`, or `#FF9500`. Dot style and dot size are fixed by the application and must not be stored as user-editable settings.
+- `application_state` stores the persisted active profile singleton. The Service restores it at application startup, clears it when the user exits the active profile, and relies on its cascade when the referenced profile is deleted. The active profile cannot enter the deletion-confirmation flow; inactive deletion requires a Service-issued confirmation object before the Data Layer is called.
 - `formula_version` on `sensitivity_tests` is mandatory on every insert. Never leave it null.
 - `is_adaptation_shot` must remain null while shots are being captured. After the session ends and the actual shot total for each sensitivity value is known, the Data Layer must compute the cutoff from `RESEARCH.md`, Section 8, and update every shot in a single transaction. Analysis must reject session data containing an unfinalized null adaptation flag.
 - `cycle_id` is mandatory on `protocol_batteries`, `sensitivity_tests`, and `phase_history`, preserving an explicit relationship between repeated Phase 1-3 runs and their owning continuous-improvement cycle.
@@ -428,7 +435,7 @@ injury_risk_flags (
 - `calibration_configs.signal_pipeline_version = 'sc8-signal-pipeline-v1'` and `tracking_contract_json` must serialize the accepted P0-R5 signal/mode contract, including SOS coefficients, event boundaries, condition sequencing, mode completion, Tracking paths, and metric definitions. Production code must reject a configuration that references only the older timing sub-contract or a draft P0-R5 candidate.
 - `formula_version = 'sc8-performance-score-v1'` and `normalization_version = 'sc8-normalization-v1'` require 15 authoritative observations per shot mode, 54 Tracking windows, fixed P0-R6 metric bounds, Submovement bounds 1-6, fixed Consistency utility cutpoints 0.8/0.6/0.4/0.2, and scoring-zero tolerance `1e-9`. The shot formula is not final-clamped. A required data-quality omission invalidates the mode score; the only explicit scoring fallbacks are Far missing onset to 1500 ms and zero authoritative hits to Submovement Penalty 1.0, while raw nullable fields remain unchanged.
 - `PRAGMA foreign_keys = ON` must be executed and verified separately for every SQLite connection; setting it only during initial schema creation is insufficient.
-- `injury_risk_flags` records are informational only and must never block or alter test execution; they exist purely to surface warnings to the user (see `RULES.md`).
+- `injury_risk_flags` records are informational only and must never block or alter test execution; they exist purely to surface warnings to the user (see `RULES.md`). Dashboard evaluation is profile-scoped: it persists at most one unacknowledged row for a matching flag type and eDPI, and acknowledgement is scoped to that same profile. A later evaluation may record a new row if the still-triggered condition recurs after acknowledgement.
 
 ---
 

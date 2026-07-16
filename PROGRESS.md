@@ -23,10 +23,10 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 ## Current Execution State
 
-- Active phase: **Phase 1 — Foundation & Data Layer (In Progress)**
-- Last completed round: **P1-R5 — Data-integrity verification**
-- Active round: **Phase 2 — Profiles and Physical Setup (Not Started)**
-- Next planned round: **P2-R1 — Calculation and validation services**
+- Active phase: **Phase 2 — Profiles and Physical Setup (Completed)**
+- Last completed round: **P2-R6 — Profile/setup acceptance**
+- Active round: **Phase 3 — Production Test Engine Core (Not Started)**
+- Next planned round: **Await explicit authorization for P3-R1 — Engine contracts and state machine**
 - Production Test Engine status: **Phase 0 configuration dependency unblocked; implementation remains not started and follows the planned Phase 1-3 sequence**
 
 ---
@@ -407,6 +407,61 @@ Every round follows this gate sequence:
 - Issues encountered: The existing P1-R3/P1-R4 suite already contained 31 tests before the final SQLite integrity-check test, so the final count is **32/32**. The P1-R5 test is intentionally verification-only; it does not add a persistent error-log table or infer product-level validation rules. Per the project owner's standing instruction, no Git operation was performed.
 - Next step: Await explicit authorization for `Phase 2 — P2-R1: Calculation and validation services`. That round will implement PSA/eDPI, starting sensitivity, cm/360, physical ruler fallback, mousepad constraints, and the documented input-validation edge cases.
 
+### Phase 2 / P2-R1: Calculation and Validation Services
+
+- Status: Completed
+- Date: 2026-07-16
+- What was done: Added engine-independent `SensitivityCalculationService` and immutable result contracts for eDPI, PSA Starting Sensitivity, exact Physical Ruler DPI estimation, eDPI floor adjustment with an explicit notification flag, cm/360, current-versus-PSA eDPI comparison, and non-blocking mousepad constraint evaluation. Added raw invariant-culture setup-input validators for Hardware DPI, current sensitivity, configured polling rate, mousepad width/height, Physical Ruler counts, and measured distance. Every formula constant comes from accepted `ResearchConstants`; no Phase 0/scoring value or UI behavior was duplicated.
+- Test results (per Definition of Done in AGENTS.md): Unity 6000.5.3f1 EditMode/NUnit passed **47/47**, 0 failed/skipped/inconclusive, including **15** new P2-R1 test cases/fixtures. The documented worked example is exact: DPI **1600 -> Starting Sensitivity 0.175 -> eDPI 280**. Verified Physical Ruler `1600 counts / 2.54 cm = 1600 DPI`, fractional estimates are not silently rounded, below-floor eDPI is adjusted to **160** with `WasAdjusted=true`, exactly 160 is not flagged, cm/360 follows the configured formula, mousepad warning uses strict greater-than, and below/equal/above baseline comparisons are correct. Missing/non-numeric/non-integer/non-finite/zero/negative user inputs and invalid typed calls are rejected. Duplicate profile names and active-profile deletion are not applicable until P2-R2/P2-R4 because this round owns no profile state.
+- Issues encountered: The Physical Ruler formula can produce a fractional estimate, but the schema and input rule require integer Hardware DPI. No document defines nearest/floor/ceiling or confirmation behavior. The service preserves the exact estimate rather than guessing; OQ-020 must be resolved before P2-R2 persists a fallback-derived DPI. Per the project owner's standing instruction, no Git operation was performed.
+- Next step: Resolve OQ-020, then await explicit authorization for `Phase 2 — P2-R2: Profile lifecycle services`.
+
+### Phase 2 / P2-R2: Profile Lifecycle Services
+
+- Status: Completed
+- Date: 2026-07-16
+- What was done: Implemented the engine-independent profile lifecycle Service over the existing Data repository: create, list, select, get active, exit, update, and inactive-only deletion. Setup fields persist through the authoritative profile schema, selection updates `last_active_date`, local duplicate names are rejected, and profile deletion invokes the schema-owned cascade. Crosshair color is accepted only during creation; the update request intentionally exposes no crosshair property and the repository update statement excludes `crosshair_config`.
+- OQ-020 resolution applied: The exact Physical Ruler estimate remains available to the caller; its nearest integer is only a suggestion. The lifecycle accepts persistence only after explicit confirmation of a positive integer DPI, which the user may edit before profile creation/update. It never silently rounds the stored value.
+- Test results (per Definition of Done in AGENTS.md): Unity 6000.5.3f1 EditMode/NUnit passed **53/53**, 0 failed/skipped/inconclusive, including **6** P2-R2 lifecycle fixtures. They verify profile creation/listing/selection, required field persistence, duplicate-name rejection, exact Physical Ruler suggestion plus confirmation gate, user-confirmed integer persistence, locked crosshair behavior, active-profile deletion rejection, inactive deletion, and schema cascade of a child cycle. The P2-R1 documented DPI **1600 -> Starting Sensitivity 0.175 -> eDPI 280** fixture remains green in the same suite.
+- Issues encountered: Active-profile state is deliberately in-memory at this point; restart-resume persistence and UI confirmation affordances belong to P2-R3/P2-R4. Per the project owner's standing instruction, no Git operation was performed.
+- Next step: Await explicit authorization for `Phase 2 — P2-R3: Slot Selection and Setup UI`.
+
+### Phase 2 / P2-R3: Slot Selection and Setup UI
+
+- Status: Completed
+- Date: 2026-07-16
+- What was done: Added an application-facing Service facade and composition factory so the UI never references SQLite or performs calculations. Added the runtime menu bootstrap with a simple table/grid Slot Selection screen, profile name/last-active rows, selection action, Create New Slot action, and the Setup form. The Setup form exposes every required profile field, labels crosshair style and four-pixel dot size as fixed, provides manual DPI and Physical Ruler input paths, displays the exact ruler estimate and suggested integer, requires explicit confirmation before persistence, and forwards all creation/validation behavior to existing Services. OQ-021 is resolved with the owner-approved palette: Yellow `#FFE600`, Magenta `#FF00FF`, Red `#FF3B30`, and Orange `#FF9500`. The UI presents only those choices and the Service rejects any other stored color. No Test Engine, score, warning, dashboard, or deletion-confirmation flow was added.
+- Test results (per Definition of Done in AGENTS.md): Unity 6000.5.3f1 EditMode/NUnit passed **58/58**, 0 failed/skipped/inconclusive, including **5** P2-R3 presentation/service fixtures. They cover manual form creation and slot selection, invalid DPI rejection before lifecycle persistence, Physical Ruler exact/suggested/confirmation flow, required/approved color selection and rejection of unsupported cyan, and absence of editable crosshair style/size inputs. All prior formula, validation, lifecycle, data-integrity, and configuration fixtures remain green.
+- Issues encountered: The palette was initially undefined. The project owner authorized the fixed four-color design on 2026-07-16, so no arbitrary color or contrast algorithm was introduced. Per the project owner's standing instruction, no Git operation was performed.
+- Next step: Await explicit authorization for `Phase 2 — P2-R4: Lifecycle Guards and Persistence`.
+
+### Phase 2 / P2-R4: Lifecycle Guards and Persistence
+
+- Status: Completed
+- Date: 2026-07-16
+- What was done: Added schema migration 2 and the singleton `application_state` persistence boundary for the active profile. The application factory now restores active state through the Service/Data boundary after reopening. Added the Service-issued inactive-deletion confirmation flow: an active profile cannot begin deletion; an inactive profile requires a confirmation object matching its current identity before deletion reaches the Data Layer. Added setup resume/edit support through presentation contracts and the UI; editable setup values update while the selected crosshair hex remains locked. Slot UI now exposes Select, Edit, Exit Active Profile, Delete, Confirm Delete, and Cancel Delete actions.
+- Test results (per Definition of Done in AGENTS.md): Unity 6000.5.3f1 EditMode/NUnit passed **63/63**, 0 failed/skipped/inconclusive, including **5** P2-R4 lifecycle/persistence fixtures. They verify active profile restoration after reopening, selection remains scoped to the explicitly selected profile, setup edit preserves locked crosshair color, active deletion is forbidden, inactive deletion requires confirmation, deleted state does not restore, and a stale confirmation cannot delete a profile after its identity changes. Production Python passed **11/11**, Phase 0 regression passed **72/72**, and Windows production build passed.
+- Issues encountered: The persistent active selection required a new versioned schema migration because no application-state table existed. It uses `ON DELETE CASCADE` consistently with the project foreign-key policy; normal UI deletion first requires exiting the active profile, while an external cascade cannot leave stale state. Per the project owner's standing instruction, no Git operation was performed.
+- Next step: Await explicit authorization for `Phase 2 — P2-R5: Ergonomic Warnings and Dashboard Shell`.
+
+### Phase 2 / P2-R5: Ergonomic Warnings and Dashboard Shell
+
+- Status: Completed
+- Date: 2026-07-16
+- What was done: Added profile-scoped Data repositories and engine-independent Services for informational ergonomic warnings and Dashboard presentation. Dashboard refresh evaluates the verified strict wrist condition (`eDPI < 200` with `wrist` movement strategy) and the verified mousepad condition (`cm/360 > mousepad width`), persists one matching unacknowledged flag, and exposes profile-scoped acknowledgement. Both warning messages are explicitly non-diagnostic, non-blocking, and do not affect test execution or score behavior. Added the runtime Dashboard shell with Best Sensitivity and Grade placeholders, profile-scoped recent-session activity, warning banner rows, acknowledgement actions, setup editing, and four disabled future Test Mode launch points. No Test Engine, scoring, or medical diagnosis behavior was added.
+- Test results (per Definition of Done in AGENTS.md): Unity 6000.5.3f1 EditMode/NUnit passed **67/67**, 0 failed/skipped/inconclusive, including **4** new P2-R5 tests. They verify the strict eDPI boundary (`199` warns; `200` does not), non-blocking flag persistence, duplicate suppression until acknowledgement, recurrence after acknowledgement while the condition remains true, acknowledgement isolation across profiles, and profile-scoped Dashboard activity. The documented P2-R1 worked example DPI **1600 -> Starting Sensitivity 0.175 -> eDPI 280** remains green. Production Python passed **11/11**, Phase 0 calibration regression passed **72/72**, and Windows production build passed.
+- Issues encountered: The test engine has not yet produced a Best Sensitivity, Grade, or completed sessions, so the Dashboard deliberately shows unavailable/empty states and disabled future-mode entry points rather than fabricated values. Warning acknowledgement represents user acknowledgement only; it does not assert that a physical condition has changed. Per the project owner's standing instruction, no Git operation was performed.
+- Next step: Await explicit authorization for `Phase 2 — P2-R6: Profile/setup acceptance`.
+
+### Phase 2 / P2-R6: Profile/setup acceptance
+
+- Status: Completed
+- Date: 2026-07-16
+- What was done: Added the end-to-end profile/setup acceptance suite over the P2-R1 through P2-R5 production workflow. The acceptance coverage exercises profile creation, selection, edit persistence, restart restoration, multiple-profile isolation, duplicate-name and invalid-input rejection, Physical Ruler preview and explicit DPI confirmation, the exact PSA/eDPI worked example and eDPI floor behavior, active-profile deletion protection, confirmed inactive deletion with child-cycle cascade, and profile-scoped warning acknowledgement. No new production formula, threshold, schema field, or Open Question was introduced.
+- Test results (per Definition of Done in AGENTS.md): Unity 6000.5.3f1 EditMode/NUnit passed **73/73**, 0 failed/skipped/inconclusive, including **6** new P2-R6 acceptance tests. Production Python passed **11/11**, Phase 0 calibration regression passed **72/72**, and Windows production build passed with executable `app/Builds/Windows/SensCalibr8.exe`.
+- Issues encountered: None. The Phase 2 exit gate is satisfied: setup fields persist, documented validation cases pass, the exact DPI **1600 -> Starting Sensitivity 0.175 -> eDPI 280** example remains exact, profiles remain isolated, warnings remain informational, active deletion is blocked, and inactive deletion cascades. Per the project owner's standing instruction, no Git operation was performed.
+- Next step: Await explicit authorization for `Phase 3 — P3-R1: Engine contracts and state machine`.
+
 ### Phase [number]: [name]
 
 - Status: Not Started / In Progress / Blocked / Completed
@@ -422,7 +477,7 @@ Every round follows this gate sequence:
 
 (Record here any point where a specification in FEATURES.md, RESEARCH.md, ARCHITECTURE.md, DESIGN.md, SKILL.md, or RULES.md was unclear or conflicting, per the Error Handling Expectation in AGENTS.md. Do not resolve these by guessing — flag them here for human review.)
 
-Current register status: **19 Resolved, 0 Open**. Phase 0 measured deliverables are implementation prerequisites, not unresolved specification decisions.
+Current register status: **21 Resolved, 0 Open**. Phase 0 measured deliverables are implementation prerequisites, not unresolved specification decisions.
 
 ### OQ-001: Wrist-Strain Warning Threshold
 
@@ -575,3 +630,20 @@ Current register status: **19 Resolved, 0 Open**. Phase 0 measured deliverables 
 - Possible options: use the deduplicated union of each anchor and its +/-10% variants (preserves the narrowing rule but may produce up to six values); run two independent three-value Phase 2 branches and compare branch winners later (clean separation but substantially more testing); or test only the two tied values in Phase 2 (least work but suspends the documented +/-10% narrowing rule for ties).
 - Recommendation: Use the deduplicated union of both anchors and their +/-10% variants, with the existing eDPI floor applied and original anchor/offset provenance retained for auditability.
 - Implementation constraint: Candidate generation must use canonical final eDPI uniqueness per cycle/phase and must never discard provenance when multiple sources collapse to one value.
+
+### OQ-020: Physical Ruler Fractional DPI Conversion
+
+- Status: Resolved — user approved recommendation on 2026-07-16
+- Resolution: Preserve and display the exact Physical Ruler estimate, prefill its nearest integer, and require explicit user confirmation before a positive integer is persisted. The user may edit the confirmed integer; the system never silently converts the exact estimate into a stored DPI.
+- Specification gap: The Physical Ruler formula returns a real-valued DPI estimate, while `RULES.md` requires Hardware DPI to be a positive integer and `profiles.mouse_dpi` is `INTEGER`. The documents do not define how a fractional estimate becomes the stored profile DPI.
+- Implemented behavior: `PhysicalRulerHardwareDpiSelection` preserves the exact estimate and suggested nearest integer independently from the confirmed positive integer. `ProfileLifecycleService` rejects an unconfirmed selection with a stable error code before any database write.
+- Possible options: round to nearest integer with an explicit displayed before/after value; require the user to confirm/edit the nearest integer before profile creation; or require another ruler measurement until the user accepts a manually entered integer.
+- Implementation constraint: UI presentation and restart-persistence behavior remain P2-R3/P2-R4 scope; all persisted values remain subject to the positive-integer Hardware DPI rule.
+
+### OQ-021: Supported Crosshair Color Palette
+
+- Status: Resolved — user approved recommendation on 2026-07-16
+- Resolution: The fixed palette is Yellow `#FFE600`, Magenta `#FF00FF`, Red `#FF3B30`, and Orange `#FF9500`. The UI presents only these options, the Service rejects any other value, and the selected hex string is persisted once at profile creation.
+- Specification gap: `DESIGN.md` and `FEATURES.md` require the user to select only a supported high-contrast color at profile creation, but neither document identifies the permitted colors, their stored identifiers, or the reference background/target values needed for an objective contrast calculation.
+- Possible options: define a small project-approved fixed palette of explicit stored color identifiers; provide a specification-backed contrast rule plus exact arena/target colors and permit every qualifying user-entered color; or remove the constrained palette requirement and permit arbitrary stored color input.
+- Implementation constraint: The values are centralized in `CrosshairPalette`; crosshair style and size remain fixed and are never persisted as user-editable settings.

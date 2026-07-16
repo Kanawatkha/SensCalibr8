@@ -33,6 +33,16 @@ VALUES (@name,@created_date,@mouse_dpi,@current_sensitivity,@configured_polling_
             });
         }
 
+        public ProfileRecord FindByName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Profile name is required.", nameof(name));
+            return execution.Read("read profile by name", connection =>
+            {
+                IReadOnlyList<IReadOnlyDictionary<string, object>> rows = connection.Query("SELECT * FROM profiles WHERE name=@name;", new Dictionary<string, object> { ["@name"] = name });
+                return rows.Count == 0 ? null : Map(rows[0]);
+            });
+        }
+
         public IReadOnlyList<ProfileRecord> List()
         {
             return execution.Read("list profiles", connection =>
@@ -43,6 +53,30 @@ VALUES (@name,@created_date,@mouse_dpi,@current_sensitivity,@configured_polling_
             });
         }
 
+        public ProfileRecord UpdatePreservingCrosshair(ProfileRecord profile)
+        {
+            if (profile == null) throw new ArgumentNullException(nameof(profile));
+            if (!profile.Id.HasValue) throw new ArgumentException("Profile id is required for update.", nameof(profile));
+            return execution.Write("update profile", connection =>
+            {
+                int changed = connection.Execute(@"UPDATE profiles SET name=@name, mouse_dpi=@mouse_dpi,
+current_sensitivity=@current_sensitivity, configured_polling_rate_hz=@configured_polling_rate_hz,
+dominant_hand=@dominant_hand, grip_style=@grip_style, movement_strategy=@movement_strategy,
+mousepad_width_cm=@mousepad_width_cm, mousepad_height_cm=@mousepad_height_cm,
+ads_multiplier=@ads_multiplier, last_active_date=@last_active_date WHERE id=@id;", UpdateParameters(profile));
+                if (changed != 1) throw new InvalidOperationException("Profile update did not affect exactly one row.");
+                IReadOnlyList<IReadOnlyDictionary<string, object>> rows = connection.Query("SELECT * FROM profiles WHERE id=@id;", new Dictionary<string, object> { ["@id"] = profile.Id.Value });
+                if (rows.Count != 1) throw new InvalidOperationException("Updated profile could not be read.");
+                return Map(rows[0]);
+            });
+        }
+
+        public bool DeleteById(long id)
+        {
+            if (id <= 0) throw new ArgumentOutOfRangeException(nameof(id));
+            return execution.Write("delete profile", connection => connection.Execute("DELETE FROM profiles WHERE id=@id;", new Dictionary<string, object> { ["@id"] = id }) == 1);
+        }
+
         private static IReadOnlyDictionary<string, object> Parameters(ProfileRecord value) => new Dictionary<string, object>
         {
             ["@name"] = value.Name, ["@created_date"] = value.CreatedDate, ["@mouse_dpi"] = value.MouseDpi,
@@ -50,6 +84,16 @@ VALUES (@name,@created_date,@mouse_dpi,@current_sensitivity,@configured_polling_
             ["@dominant_hand"] = value.DominantHand, ["@crosshair_config"] = value.CrosshairConfig, ["@grip_style"] = value.GripStyle,
             ["@movement_strategy"] = value.MovementStrategy, ["@mousepad_width_cm"] = value.MousepadWidthCm,
             ["@mousepad_height_cm"] = value.MousepadHeightCm, ["@ads_multiplier"] = value.AdsMultiplier, ["@last_active_date"] = value.LastActiveDate
+        };
+
+        private static IReadOnlyDictionary<string, object> UpdateParameters(ProfileRecord value) => new Dictionary<string, object>
+        {
+            ["@id"] = value.Id.Value, ["@name"] = value.Name, ["@mouse_dpi"] = value.MouseDpi,
+            ["@current_sensitivity"] = value.CurrentSensitivity, ["@configured_polling_rate_hz"] = value.ConfiguredPollingRateHz,
+            ["@dominant_hand"] = value.DominantHand, ["@grip_style"] = value.GripStyle,
+            ["@movement_strategy"] = value.MovementStrategy, ["@mousepad_width_cm"] = value.MousepadWidthCm,
+            ["@mousepad_height_cm"] = value.MousepadHeightCm, ["@ads_multiplier"] = value.AdsMultiplier,
+            ["@last_active_date"] = value.LastActiveDate
         };
 
         private static ProfileRecord Map(IReadOnlyDictionary<string, object> row) => new ProfileRecord(

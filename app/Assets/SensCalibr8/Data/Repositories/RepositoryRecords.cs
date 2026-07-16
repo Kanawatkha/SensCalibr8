@@ -3,6 +3,19 @@ using System.Collections.Generic;
 
 namespace SensCalibr8.Data.Repositories
 {
+    public sealed class InjuryRiskFlagRecord
+    {
+        public InjuryRiskFlagRecord(long? id, long profileId, string flagType, string triggeredDate, double edpiAtTrigger, bool acknowledged)
+        {
+            Id = id; ProfileId = profileId > 0 ? profileId : throw new ArgumentOutOfRangeException(nameof(profileId));
+            FlagType = Require(flagType, nameof(flagType)); TriggeredDate = Require(triggeredDate, nameof(triggeredDate));
+            EdpiAtTrigger = edpiAtTrigger; Acknowledged = acknowledged;
+        }
+        public long? Id { get; } public long ProfileId { get; } public string FlagType { get; } public string TriggeredDate { get; }
+        public double EdpiAtTrigger { get; } public bool Acknowledged { get; }
+        private static string Require(string value, string field) => !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentException(field + " is required.", field);
+    }
+
     public sealed class ProfileRecord
     {
         public ProfileRecord(long? id, string name, string createdDate, long mouseDpi, double currentSensitivity,

@@ -6,8 +6,21 @@ namespace SensCalibr8.Data.Migrations
     {
         public static IReadOnlyList<SchemaMigration> All { get; } = new[]
         {
-            new SchemaMigration(1, "initial_schema", InitialSchemaSql)
+            new SchemaMigration(1, "initial_schema", InitialSchemaSql),
+            new SchemaMigration(2, "active_profile_state", ActiveProfileStateSql)
         };
+
+        private const string ActiveProfileStateSql = @"
+CREATE TABLE application_state (
+    state_key TEXT PRIMARY KEY CHECK (state_key = 'active_profile'),
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    updated_date TEXT NOT NULL
+);
+
+CREATE INDEX idx_application_state_profile_id ON application_state(profile_id);
+
+PRAGMA user_version = 2;
+";
 
         private const string InitialSchemaSql = @"
 CREATE TABLE profiles (
