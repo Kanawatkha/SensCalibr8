@@ -29,11 +29,103 @@ namespace SensCalibr8.Data.Repositories
             });
         }
 
+        public SessionFinalizationResult PersistAndFinalize(SessionFinalizationRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            return execution.Write("persist and finalize completed session", connection =>
+            {
+                using SqliteTransaction transaction = connection.BeginImmediateTransaction();
+                VerifySessionParents(connection, request.Capture.Session);
+                VerifyActiveAttempt(connection, request);
+                RequireUnsetAdaptationFlags(request.Capture);
+                long sessionId = InsertSession(connection, request.Capture.Session);
+                InsertTimingDiagnostics(connection, sessionId, request.Capture.TimingDiagnostics);
+                var shotIds = new List<long>(request.Capture.Shots.Count);
+                foreach (ShotCaptureRecord shot in request.Capture.Shots) shotIds.Add(InsertShot(connection, sessionId, request.Capture.Session.ProfileId, shot));
+                var trackingTrialIds = new List<long>(request.Capture.TrackingTrials.Count);
+                foreach (TrackingTrialCaptureRecord trial in request.Capture.TrackingTrials) trackingTrialIds.Add(InsertTrackingTrial(connection, sessionId, request.Capture.Session.ProfileId, trial));
+                foreach (TrackingWindowCaptureRecord window in request.Capture.TrackingWindows) InsertTrackingWindow(connection, trackingTrialIds, window);
+                foreach (MouseSampleCaptureRecord sample in request.Capture.MouseSamples) InsertMouseSample(connection, sessionId, shotIds, sample);
+                InsertSequenceAudit(connection, sessionId, request.SequenceAudit);
+                int shotAdaptationCount = FinalizeShotAdaptation(connection, shotIds, request.Adaptation);
+                int trackingAdaptationCount = FinalizeTrackingAdaptation(connection, sessionId, request.Adaptation);
+                MarkAttemptCompleted(connection, request.AttemptId, sessionId, request.CompletedDate);
+                bool batteryCompleted = CompleteBatteryIfReady(connection, request.Capture.Session.BatteryId, request.CompletedDate);
+                transaction.Commit();
+                return new SessionFinalizationResult(sessionId, batteryCompleted, shotAdaptationCount, trackingAdaptationCount);
+            });
+        }
+
         private static void VerifySessionParents(SqliteDatabaseConnection connection, SessionRecord session)
         {
             object count = connection.Scalar(@"SELECT COUNT(*) FROM protocol_batteries b JOIN calibration_configs c ON c.id=@calibration_config_id
 WHERE b.id=@battery_id AND b.profile_id=@profile_id;", new Dictionary<string, object> { ["@battery_id"] = session.BatteryId, ["@profile_id"] = session.ProfileId, ["@calibration_config_id"] = session.CalibrationConfigId });
             if (Convert.ToInt64(count) != 1) throw new InvalidOperationException("The session battery/profile/calibration references are invalid.");
+        }
+
+        private static void VerifyActiveAttempt(SqliteDatabaseConnection connection, SessionFinalizationRequest request)
+        {
+            SessionRecord session = request.Capture.Session;
+            SessionSequenceAuditRecord audit = request.SequenceAudit;
+            object count = connection.Scalar(@"SELECT COUNT(*) FROM session_attempts WHERE id=@attempt_id AND state='capturing'
+AND profile_id=@profile_id AND battery_id=@battery_id AND calibration_config_id=@calibration_config_id AND mode=@mode
+AND sequence_contract_version=@contract_version AND sequence_generator=@generator AND sequence_seed_sha256=@seed_sha256
+AND sequence_seed_material=@seed_material AND blind_candidate_label=@blind_label;", new Dictionary<string, object>
+            {
+                ["@attempt_id"] = request.AttemptId, ["@profile_id"] = session.ProfileId, ["@battery_id"] = session.BatteryId,
+                ["@calibration_config_id"] = session.CalibrationConfigId, ["@mode"] = session.Mode,
+                ["@contract_version"] = audit.ContractVersion, ["@generator"] = audit.Generator, ["@seed_sha256"] = audit.SeedSha256,
+                ["@seed_material"] = audit.SeedMaterial, ["@blind_label"] = audit.BlindCandidateLabel
+            });
+            if (Convert.ToInt64(count) != 1) throw new InvalidOperationException("The active attempt does not match the completed session evidence.");
+        }
+
+        private static void RequireUnsetAdaptationFlags(SessionCaptureRequest capture)
+        {
+            foreach (ShotCaptureRecord shot in capture.Shots)
+                if (shot == null || shot.IsAdaptationShot.HasValue) throw new InvalidOperationException("Shot adaptation flags must remain null until session finalization.");
+            foreach (TrackingTrialCaptureRecord trial in capture.TrackingTrials)
+                if (trial == null || trial.IsAdaptationTrial.HasValue) throw new InvalidOperationException("Tracking adaptation flags must remain null until session finalization.");
+        }
+
+        private static void InsertSequenceAudit(SqliteDatabaseConnection connection, long sessionId, SessionSequenceAuditRecord value)
+        {
+            connection.Execute(@"INSERT INTO session_sequence_audits(session_id,sequence_contract_version,sequence_generator,sequence_seed_sha256,sequence_seed_material,blind_candidate_label)
+VALUES(@session_id,@contract_version,@generator,@seed_sha256,@seed_material,@blind_label);", new Dictionary<string, object>
+            {
+                ["@session_id"] = sessionId, ["@contract_version"] = value.ContractVersion, ["@generator"] = value.Generator,
+                ["@seed_sha256"] = value.SeedSha256, ["@seed_material"] = value.SeedMaterial, ["@blind_label"] = value.BlindCandidateLabel
+            });
+        }
+
+        private static int FinalizeShotAdaptation(SqliteDatabaseConnection connection, IReadOnlyList<long> shotIds, SessionAdaptationFinalizationPolicy policy)
+        {
+            int cutoff = Convert.ToInt32(Math.Floor(shotIds.Count * policy.ShotAdaptationFraction));
+            for (int index = 0; index < shotIds.Count; index++)
+                connection.Execute("UPDATE shots SET is_adaptation_shot=@is_adaptation_shot WHERE id=@id AND is_adaptation_shot IS NULL;", new Dictionary<string, object> { ["@is_adaptation_shot"] = index < cutoff, ["@id"] = shotIds[index] });
+            return cutoff;
+        }
+
+        private static int FinalizeTrackingAdaptation(SqliteDatabaseConnection connection, long sessionId, SessionAdaptationFinalizationPolicy policy)
+        {
+            connection.Execute("UPDATE tracking_data SET is_adaptation_trial=CASE WHEN block_index < @adaptation_blocks THEN 1 ELSE 0 END WHERE session_id=@session_id AND is_adaptation_trial IS NULL;", new Dictionary<string, object> { ["@adaptation_blocks"] = policy.TrackingAdaptationBlockCount, ["@session_id"] = sessionId });
+            return Convert.ToInt32(connection.Scalar("SELECT COUNT(*) FROM tracking_data WHERE session_id=@session_id AND is_adaptation_trial=1;", new Dictionary<string, object> { ["@session_id"] = sessionId }));
+        }
+
+        private static void MarkAttemptCompleted(SqliteDatabaseConnection connection, long attemptId, long sessionId, string completedDate)
+        {
+            int changed = connection.Execute("UPDATE session_attempts SET state='completed',disposition_reason='session-finalized',updated_date=@date,completed_session_id=@session_id WHERE id=@attempt_id AND state='capturing';", new Dictionary<string, object> { ["@date"] = completedDate, ["@session_id"] = sessionId, ["@attempt_id"] = attemptId });
+            if (changed != 1) throw new InvalidOperationException("Session attempt could not be completed.");
+        }
+
+        private static bool CompleteBatteryIfReady(SqliteDatabaseConnection connection, long batteryId, string completedDate)
+        {
+            long count = Convert.ToInt64(connection.Scalar("SELECT COUNT(DISTINCT mode) FROM sessions WHERE battery_id=@battery_id;", new Dictionary<string, object> { ["@battery_id"] = batteryId }));
+            if (count < 4L) return false;
+            if (count != 4L) throw new InvalidOperationException("A protocol battery must contain exactly four distinct modes.");
+            int changed = connection.Execute("UPDATE protocol_batteries SET completed_date=@date WHERE id=@battery_id AND completed_date IS NULL;", new Dictionary<string, object> { ["@date"] = completedDate, ["@battery_id"] = batteryId });
+            if (changed != 1) throw new InvalidOperationException("Protocol battery completion is invalid.");
+            return true;
         }
 
         private static long InsertSession(SqliteDatabaseConnection connection, SessionRecord value)

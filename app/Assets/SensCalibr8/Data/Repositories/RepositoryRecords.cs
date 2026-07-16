@@ -139,4 +139,49 @@ namespace SensCalibr8.Data.Repositories
         { Session = session ?? throw new ArgumentNullException(nameof(session)); TimingDiagnostics = timingDiagnostics ?? throw new ArgumentNullException(nameof(timingDiagnostics)); Shots = shots ?? throw new ArgumentNullException(nameof(shots)); MouseSamples = mouseSamples ?? throw new ArgumentNullException(nameof(mouseSamples)); TrackingTrials = trackingTrials ?? throw new ArgumentNullException(nameof(trackingTrials)); TrackingWindows = trackingWindows ?? throw new ArgumentNullException(nameof(trackingWindows)); }
         public SessionRecord Session { get; } public SessionTimingDiagnosticsRecord TimingDiagnostics { get; } public IReadOnlyList<ShotCaptureRecord> Shots { get; } public IReadOnlyList<MouseSampleCaptureRecord> MouseSamples { get; } public IReadOnlyList<TrackingTrialCaptureRecord> TrackingTrials { get; } public IReadOnlyList<TrackingWindowCaptureRecord> TrackingWindows { get; }
     }
+
+    public sealed class SessionSequenceAuditRecord
+    {
+        public SessionSequenceAuditRecord(string contractVersion, string generator, string seedSha256, string seedMaterial, string blindCandidateLabel)
+        { ContractVersion=Require(contractVersion); Generator=Require(generator); SeedSha256=Require(seedSha256); SeedMaterial=Require(seedMaterial); BlindCandidateLabel=Require(blindCandidateLabel); }
+        public string ContractVersion { get; } public string Generator { get; } public string SeedSha256 { get; } public string SeedMaterial { get; } public string BlindCandidateLabel { get; }
+        private static string Require(string value) => !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentException("Sequence audit field is required.");
+    }
+
+    public sealed class SessionAttemptStartRecord
+    {
+        public SessionAttemptStartRecord(long profileId,long cycleId,long candidateId,long batteryId,long calibrationConfigId,string mode,string startedDate,SessionSequenceAuditRecord sequenceAudit)
+        { ProfileId=Positive(profileId);CycleId=Positive(cycleId);CandidateId=Positive(candidateId);BatteryId=Positive(batteryId);CalibrationConfigId=Positive(calibrationConfigId);Mode=Require(mode);StartedDate=Require(startedDate);SequenceAudit=sequenceAudit??throw new ArgumentNullException(nameof(sequenceAudit)); }
+        public long ProfileId { get; } public long CycleId { get; } public long CandidateId { get; } public long BatteryId { get; } public long CalibrationConfigId { get; } public string Mode { get; } public string StartedDate { get; } public SessionSequenceAuditRecord SequenceAudit { get; }
+        private static long Positive(long value) => value > 0 ? value : throw new ArgumentOutOfRangeException(); private static string Require(string value) => !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentException("Attempt field is required.");
+    }
+
+    public sealed class SessionAttemptRecord
+    {
+        public SessionAttemptRecord(long id,SessionAttemptStartRecord start,long attemptOrdinal,string state,string dispositionReason,string updatedDate,long? completedSessionId)
+        { Id=Positive(id);Start=start??throw new ArgumentNullException(nameof(start));AttemptOrdinal=Positive(attemptOrdinal);State=Require(state);DispositionReason=Require(dispositionReason);UpdatedDate=Require(updatedDate);CompletedSessionId=completedSessionId; }
+        public long Id { get; } public SessionAttemptStartRecord Start { get; } public long AttemptOrdinal { get; } public string State { get; } public string DispositionReason { get; } public string UpdatedDate { get; } public long? CompletedSessionId { get; }
+        private static long Positive(long value) => value > 0 ? value : throw new ArgumentOutOfRangeException(); private static string Require(string value) => !string.IsNullOrWhiteSpace(value) ? value : throw new ArgumentException("Attempt field is required.");
+    }
+
+    public sealed class SessionAdaptationFinalizationPolicy
+    {
+        public SessionAdaptationFinalizationPolicy(double shotAdaptationFraction,int trackingAdaptationBlockCount)
+        { if(double.IsNaN(shotAdaptationFraction)||double.IsInfinity(shotAdaptationFraction)||shotAdaptationFraction<0d||shotAdaptationFraction>1d)throw new ArgumentOutOfRangeException(nameof(shotAdaptationFraction));if(trackingAdaptationBlockCount<0)throw new ArgumentOutOfRangeException(nameof(trackingAdaptationBlockCount));ShotAdaptationFraction=shotAdaptationFraction;TrackingAdaptationBlockCount=trackingAdaptationBlockCount; }
+        public double ShotAdaptationFraction { get; } public int TrackingAdaptationBlockCount { get; }
+    }
+
+    public sealed class SessionFinalizationRequest
+    {
+        public SessionFinalizationRequest(long attemptId,SessionCaptureRequest capture,SessionSequenceAuditRecord sequenceAudit,SessionAdaptationFinalizationPolicy adaptation,string completedDate)
+        { AttemptId=attemptId>0?attemptId:throw new ArgumentOutOfRangeException(nameof(attemptId));Capture=capture??throw new ArgumentNullException(nameof(capture));SequenceAudit=sequenceAudit??throw new ArgumentNullException(nameof(sequenceAudit));Adaptation=adaptation??throw new ArgumentNullException(nameof(adaptation));CompletedDate=!string.IsNullOrWhiteSpace(completedDate)?completedDate:throw new ArgumentException("Completion date is required.",nameof(completedDate)); }
+        public long AttemptId { get; } public SessionCaptureRequest Capture { get; } public SessionSequenceAuditRecord SequenceAudit { get; } public SessionAdaptationFinalizationPolicy Adaptation { get; } public string CompletedDate { get; }
+    }
+
+    public sealed class SessionFinalizationResult
+    {
+        public SessionFinalizationResult(long sessionId,bool batteryCompleted,int shotAdaptationCount,int trackingAdaptationCount)
+        { SessionId=sessionId;BatteryCompleted=batteryCompleted;ShotAdaptationCount=shotAdaptationCount;TrackingAdaptationCount=trackingAdaptationCount; }
+        public long SessionId { get; } public bool BatteryCompleted { get; } public int ShotAdaptationCount { get; } public int TrackingAdaptationCount { get; }
+    }
 }

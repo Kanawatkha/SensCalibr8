@@ -7,8 +7,49 @@ namespace SensCalibr8.Data.Migrations
         public static IReadOnlyList<SchemaMigration> All { get; } = new[]
         {
             new SchemaMigration(1, "initial_schema", InitialSchemaSql),
-            new SchemaMigration(2, "active_profile_state", ActiveProfileStateSql)
+            new SchemaMigration(2, "active_profile_state", ActiveProfileStateSql),
+            new SchemaMigration(3, "session_battery_lifecycle", SessionBatteryLifecycleSql)
         };
+
+        private const string SessionBatteryLifecycleSql = @"
+CREATE TABLE session_attempts (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
+    candidate_id INTEGER NOT NULL REFERENCES protocol_candidates(id) ON DELETE CASCADE,
+    battery_id INTEGER NOT NULL REFERENCES protocol_batteries(id) ON DELETE CASCADE,
+    calibration_config_id INTEGER NOT NULL REFERENCES calibration_configs(id) ON DELETE CASCADE,
+    mode TEXT NOT NULL CHECK (mode IN ('flick_close', 'flick_far', 'tracking', 'micro_correction')),
+    attempt_ordinal INTEGER NOT NULL,
+    state TEXT NOT NULL CHECK (state IN ('capturing', 'paused', 'cancelled', 'faulted', 'completed')),
+    disposition_reason TEXT NOT NULL,
+    started_date TEXT NOT NULL,
+    updated_date TEXT NOT NULL,
+    sequence_contract_version TEXT NOT NULL,
+    sequence_generator TEXT NOT NULL,
+    sequence_seed_sha256 TEXT NOT NULL,
+    sequence_seed_material TEXT NOT NULL,
+    blind_candidate_label TEXT NOT NULL,
+    completed_session_id INTEGER UNIQUE REFERENCES sessions(id) ON DELETE CASCADE,
+    UNIQUE (battery_id, mode, attempt_ordinal)
+);
+
+CREATE TABLE session_sequence_audits (
+    id INTEGER PRIMARY KEY,
+    session_id INTEGER NOT NULL UNIQUE REFERENCES sessions(id) ON DELETE CASCADE,
+    sequence_contract_version TEXT NOT NULL,
+    sequence_generator TEXT NOT NULL,
+    sequence_seed_sha256 TEXT NOT NULL,
+    sequence_seed_material TEXT NOT NULL,
+    blind_candidate_label TEXT NOT NULL
+);
+
+CREATE INDEX idx_session_attempts_battery_id ON session_attempts(battery_id);
+CREATE INDEX idx_session_attempts_candidate_id ON session_attempts(candidate_id);
+CREATE INDEX idx_session_sequence_audits_session_id ON session_sequence_audits(session_id);
+
+PRAGMA user_version = 3;
+";
 
         private const string ActiveProfileStateSql = @"
 CREATE TABLE application_state (

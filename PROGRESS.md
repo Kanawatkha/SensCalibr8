@@ -23,11 +23,31 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 ## Current Execution State
 
-- Active phase: **Phase 2 — Profiles and Physical Setup (Completed)**
-- Last completed round: **P2-R6 — Profile/setup acceptance**
-- Active round: **Phase 3 — Production Test Engine Core (Not Started)**
-- Next planned round: **Await explicit authorization for P3-R1 — Engine contracts and state machine**
-- Production Test Engine status: **Phase 0 configuration dependency unblocked; implementation remains not started and follows the planned Phase 1-3 sequence**
+- Active phase: **Phase 3 — Production Test Engine Core (Completed)**
+- Last completed round: **P3-R7 — Production Test Engine acceptance**
+- Active round: **P3-R7 — Production Test Engine acceptance (Completed)**
+- Next planned round: **P4-R1 — Close Flick (Awaiting explicit authorization)**
+- Production Test Engine status: **Shared production engine accepted; four mode implementations remain in Phase 4**
+
+### Phase 3 / P3-R6: Core-engine verification
+
+- Verification coverage added: identical raw-input replay, deterministic target-sequence replay, frozen geometry/letterbox resolution invariance, render-frame dependency scan, and interrupted session-capture rollback after session/shot insertion begins.
+- Unity EditMode result: **115/115 passed, 0 failed, 0 skipped**.
+- Windows production build: **passed**; `app/Builds/Windows/SensCalibr8.exe` generated successfully (667648 bytes).
+- Calibration analysis regression: **72/72 passed**.
+- General analysis regression: attempted with the bundled workspace Python runtime but blocked by environment-only dependency metadata absence for `contourpy`; no project code failure was reported by that suite before the dependency lookup. Re-run with the project-pinned environment when available.
+- `git diff --check`: passed.
+- Issues resolved during verification: added the missing configuration-loader namespace in the new test fixture and aligned the rollback assertion with the repository's `DataAccessException` boundary.
+- Result: **P3-R6 complete**. The core lifecycle, deterministic capture/sequence behavior, geometry invariance, adaptation finalization, incomplete-battery behavior, and atomic rollback are verified. No Git operation was performed.
+
+### Phase 3 / P3-R7: Production Test Engine acceptance
+
+- Acceptance coverage added: frozen configuration envelope acceptance across timing, frame, geometry, sequence, session-lifecycle, and research-constant loaders; all four mode identities traversing the same complete lifecycle without scoring; and a static single-state-machine boundary check.
+- Unity EditMode result: **118/118 passed, 0 failed, 0 skipped**.
+- Windows production build: **passed**; `app/Builds/Windows/SensCalibr8.exe` generated successfully (667648 bytes).
+- Calibration analysis regression: **72/72 passed**.
+- `git diff --check`: passed.
+- Result: **P3-R7 complete and Phase 3 exit gate passed**. The shared production engine is accepted for Phase 4 mode implementation. No Git operation was performed.
 
 ---
 
@@ -126,6 +146,7 @@ Every round follows this gate sequence:
 - **P3-R4 — Target sequencing and confound control:** Implement deterministic seedable condition sequences, size/distance randomization within the frozen matrix, blind sensitivity labels, counterbalanced candidate/mode order, spawn safety constraints, and auditable sequence metadata.
 - **P3-R5 — Session/battery persistence lifecycle:** Persist one mode and sensitivity per session, exactly four distinct modes per complete battery, candidate provenance, pause/cancel/failure disposition, transactional completion, and post-session adaptation finalization in one transaction while active shots remain null.
 - **P3-R6 — Core-engine verification:** Test timer/input accuracy against calibration fixtures, deterministic replay/sequence generation, frame and geometry invariance, invalid state transitions, incomplete battery behavior, interrupted-write recovery, raw-data preservation, and rejection of unfinalized adaptation data.
+- **P3-R7 — Production Test Engine acceptance:** Run the complete shared-engine acceptance matrix across all four mode identities, frozen configuration contracts, lifecycle behavior, build output, calibration regressions, and single-state-machine architecture boundary before entering Phase 4.
 
 **Primary outputs:** Shared Test Engine state machine, deterministic capture/timing, calibrated arena, confound-control sequencer, session/battery persistence, and engine-core regression suite.
 
@@ -461,6 +482,46 @@ Every round follows this gate sequence:
 - Test results (per Definition of Done in AGENTS.md): Unity 6000.5.3f1 EditMode/NUnit passed **73/73**, 0 failed/skipped/inconclusive, including **6** new P2-R6 acceptance tests. Production Python passed **11/11**, Phase 0 calibration regression passed **72/72**, and Windows production build passed with executable `app/Builds/Windows/SensCalibr8.exe`.
 - Issues encountered: None. The Phase 2 exit gate is satisfied: setup fields persist, documented validation cases pass, the exact DPI **1600 -> Starting Sensitivity 0.175 -> eDPI 280** example remains exact, profiles remain isolated, warnings remain informational, active deletion is blocked, and inactive deletion cascades. Per the project owner's standing instruction, no Git operation was performed.
 - Next step: Await explicit authorization for `Phase 3 — P3-R1: Engine contracts and state machine`.
+
+### Phase 3 / P3-R1: Engine contracts and state machine
+
+- Status: Completed
+- Date: 2026-07-16
+- What was done: Added immutable engine contexts for cycle, protocol candidate, protocol battery, and session lineage; the shared `ITestMode` lifecycle contract; non-scoring capture/completion/report contracts; stable lifecycle error codes; and the mode-independent `TestEngineStateMachine`. The normal path is `Created -> Prepared -> Capturing -> Ending -> Completed`; cancellation is terminal, callback failures and incomplete completion enter `Faulted`, and recovery returns to `Prepared` so capture must restart explicitly. The engine rejects cross-profile/cycle/candidate/phase/sensitivity lineage mismatch, a mode/session mismatch, missing source contracts, internally incomplete calibration identity, and configuration-version mismatch before a run can prepare. No raw input, timer, Unity scene behavior, SQL, persistence, adaptation, target spawning, mode-specific metrics, or scoring was implemented.
+- Test results (per Definition of Done in AGENTS.md): Unity 6000.5.3f1 EditMode/NUnit passed **81/81**, 0 failed/skipped/inconclusive, including **8** new P3-R1 tests. They verify the complete shared lifecycle callback order, invalid transition rejection, fault/recovery behavior, cancellation terminality, incomplete-completion rejection, lineage isolation, fail-closed configuration checks, and mode identity. Static scan found no `Time.time`, legacy `Input.GetAxis`, raw SQL, or Performance Score implementation in the new engine production files. Production Python passed **11/11**, Phase 0 calibration regression passed **72/72**, and the Windows production build passed.
+- Issues encountered: None. P3-R1 deliberately defines only lifecycle and identity boundaries. Exact interruption persistence, in-memory evidence recovery, pause/cancel disposition, and transactional adaptation finalization remain P3-R5 responsibilities; P3-R2 owns the timestamp and raw-input implementations. Per the project owner's standing instruction, no Git operation was performed.
+- Next step: Await explicit authorization for `Phase 3 — P3-R2: Deterministic input and timing`.
+
+### Phase 3 / P3-R2: Deterministic input and timing
+
+- Status: Completed
+- Date: 2026-07-16
+- What was done: Added immutable raw-input/timing contracts, a `Stopwatch` high-resolution clock, an Input System `onEvent` mouse source with redundant-event merging disabled, deterministic in-memory capture, cumulative angular conversion using tested sensitivity and the centrally loaded Valorant yaw multiplier, frozen timing/frame-policy parsers, `integrity-modal-cadence` diagnostics, and gap-safe uniform angular resampling. Duplicate/reversed event timestamps are retained and fail the timing gate; receipt bursts and gaps remain diagnostics, with gaps splitting resampling segments. Added Service-layer mapping to existing `mouse_samples` and `session_timing_diagnostics` records and verified that produced evidence commits through the existing atomic session transaction. No live per-event database write, frame-count timing, filter/Submovement detection, arena, target, mode metric, adaptation, or scoring behavior was added.
+- Test results (per Definition of Done in AGENTS.md): Unity 6000.5.3f1 EditMode/NUnit passed **91/91**, 0 failed/skipped/inconclusive, including **10** new P3-R2 tests. They verify frozen 1000 Hz / 0.5 ms / 20-sample timing values and 144 Hz / VSync 0 frame policy loading, raw-delta preservation, cumulative angular conversion, exact stable-cadence parity, duplicate/reversal rejection, burst/gap diagnostic behavior, no-gap-bridging resampling, strict modal-cadence rejection, raw/derived persistence mapping, atomic SQLite persistence, frame-policy restoration, and render-frame-independent clock/logic classes. Static scan found no `Time.time`, `Time.deltaTime`, legacy `Input.GetAxis`, frame-count timing, or raw SQL in the new production input/timing files. Production Python passed **11/11**, Phase 0 calibration regression passed **72/72**, and the Windows production build passed.
+- Issues encountered: The first test run passed 89/90; its modal-cadence fixture also made the median map to the burst class, so the rejection correctly occurred at the earlier median-cadence gate. The fixture was corrected to keep the median in the one-cadence class while making burst and single counts tie; the unchanged production policy then passed all 91 tests. Actual target/mode event integration and display-state interruption handling remain P3-R3/P3-R5 scope. Per the project owner's standing instruction, no Git operation was performed.
+- Next step: Await explicit authorization for `Phase 3 — P3-R3: Calibrated arena runtime`.
+
+### Phase 3 / P3-R3: Calibrated arena runtime
+
+- Implementation: Added `CalibratedArenaRuntime`, which fail-closed parses the accepted immutable geometry configuration, applies the frozen frame policy, locks a perspective camera to its frozen FOV/clipping/position, applies a 16:9 letterboxed viewport, builds the six-face enclosed unlit shadow-free room, and exposes a cyan-sphere `ArenaTargetService` that accepts only frozen target size names. Added the fixed four-pixel profile-palette crosshair, reserved-top minimal HUD, and visual-only first-person feedback seam. Target sequencing, actual shot handling, condition randomization, and scoring remain explicitly out of scope for P3-R4/P4.
+- Verification status: Completed after the owner activated Unity Personal and authorized closing stale Editor processes that held the project lock. Unity EditMode passed **94/94**, Windows production build passed, Python production tests passed **11/11**, and Phase 0 calibration regressions passed **72/72**.
+- Next step: Completed by the authorized `P3-R4` round below. Per the project owner's standing instruction, no Git operation was performed.
+
+### Phase 3 / P3-R4: Target sequencing and confound control
+
+- Implementation: Added a fail-closed `FrozenSequenceContract` projection over the accepted P0-R4/P0-R5 geometry and mode contracts. Added SHA-256/counter-keyed deterministic condition generation using only mode-contract version, profile, cycle, phase, canonical mode, and battery repetition; sensitivity value and blind label are structurally absent. Close/Far create three complete 3 x 3 size-offset blocks plus rotating extras, Close foreperiods stay inside the frozen range, Micro-Correction samples deterministic radius/direction inside its frozen pixel range, and Tracking produces one complete pattern-size cross-product in each block. Every projected stationary target is rejected if its full radius violates the frozen edge/HUD safe viewport.
+- Confound control: Added opaque `Candidate-01...` assignments with no sensitivity property, deterministic candidate randomization, four-position mode rotation, canonical audit seed material/hash, and the exact frozen confirmatory 5/5 A-first/B-first order. Confirmatory pair plans generate stable `pairing_seed` and `matched_condition_key` from the contract-declared sorted eDPI pair inputs; matched candidates can therefore share mode order and condition seeds without displaying numeric sensitivity.
+- Test results: Unity 6000.5.3f1 EditMode/NUnit passed **103/103**, 0 failed/skipped/inconclusive, including **9** P3-R4 tests. Windows production build passed. Python production tests passed **11/11** and Phase 0 calibration regressions passed **72/72**. Static scans found no frame-derived timing, legacy input, raw SQL, or sensitivity/blind-label seed use in production sequencing; `git diff --check` passed.
+- Issues encountered: The first P3-R4 run compiled successfully but three tests used NUnit `Has.Count` against array/LINQ runtime types whose reflected `Count` property is unavailable in this Unity NUnit version. Assertions were corrected to evaluate `Count`/`Count()` directly; production sequencing code did not change for that failure. Canonical mode/phase seed names and confirmatory pair audit keys were then tightened before final verification.
+- Next step: Await explicit authorization for `Phase 3 — P3-R5: Session/battery persistence lifecycle`. Per the project owner's standing instruction, no Git operation was performed.
+
+### Phase 3 / P3-R5: Session/battery persistence lifecycle
+
+- Implementation: Added migration 3 with `session_attempts` and `session_sequence_audits`. An attempt carries profile/cycle/candidate/battery/configuration lineage, opaque blind label, and deterministic sequence audit identity through capturing, paused, cancelled, faulted, or completed disposition. `SessionBatteryPersistenceService` is the Services-layer orchestration boundary; Test Logic remains free of SQL and the Data Layer owns all transaction work.
+- Atomic completion: `SessionCaptureRepository.PersistAndFinalize` inserts raw session/timing/shot/tracking/mouse data, persists its sequence audit, finalizes adaptation flags only after the final observation count is known, marks the active attempt complete, and marks the battery complete only when its fourth distinct mode commits. Any failure rolls back all inserts and leaves the attempt non-completed. A completed mode cannot start another attempt in the same battery.
+- Test results: Unity 6000.5.3f1 EditMode/NUnit passed **110/110**, 0 failed/skipped/inconclusive, including **7** P3-R5 lifecycle tests. They cover frozen adaptation-policy loading, pause/resume/cancel/fault dispositions, 50% shot adaptation finalization, Tracking first-block finalization, four-mode battery completion, audit mismatch rejection, duplicate-mode prevention, and whole-capture rollback. Windows production build passed. Python production tests passed **11/11** and Phase 0 calibration regressions passed **72/72**. Static scan found no frame-derived timing, legacy input, or raw SQL in Services/Test Logic; `git diff --check` passed.
+- Issues encountered: The first P3-R5 test run exposed a fixture error: a normal shot used `false` rather than null for its pre-finalization adaptation flag. The repository correctly rejected it. The fixture was corrected to use null; the production transaction and lifecycle policy were unchanged. Per the project owner's standing instruction, no Git operation was performed.
+- Next step: Await explicit authorization for `Phase 3 — P3-R6: Core-engine verification`.
 
 ### Phase [number]: [name]
 
