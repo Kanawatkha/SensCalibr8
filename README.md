@@ -6,7 +6,7 @@ SensCalibr8 is an offline Unity/C#/SQLite/Python desktop application for structu
 
 - Phase 0 calibration is complete and frozen as `calibration_config_v1`.
 - Phase 1 production foundation and Data Layer are complete. Phase 2 calculation/input-validation, profile lifecycle, slot/setup UI, persistent lifecycle guards, informational ergonomic warnings, and the Dashboard shell are established under the engine-independent Services assembly.
-- Phase 3 Test Engine lifecycle contracts, mode-independent state machine, deterministic raw-input capture, high-resolution timing, calibrated arena, confound-controlled sequencing, and atomic session/battery persistence are established and accepted. All four Phase 4 modes are independently implemented with deterministic conditions and raw/derived evidence boundaries; cross-mode battery integration, final mode acceptance, and scoring remain in later rounds.
+- Phase 3 Test Engine and all four Phase 4 modes are implemented, integrated, reproducible, and accepted. Phase 5 protocol/scoring is complete through the full P5-R8 regression sweep, including versioned scoring, the complete Phase 1-3 narrowing flow, scientific-rigor controls, continuous 5-10-session Best-Sensitivity training, plateau detection, and automatic fresh Phase 1 initialization with immutable cycle lineage.
 
 ## Start Here
 

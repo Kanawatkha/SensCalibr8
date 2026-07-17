@@ -122,13 +122,15 @@ The narrowing range, session limits, and stabilization threshold are defined in 
 - With two statistically tied Phase 1 anchors, generate the union of each anchor at -10%, 0%, and +10%, apply the eDPI floor, then deduplicate final eDPI values. Preserve every anchor/offset provenance record when multiple sources collapse to one candidate (see `RESEARCH.md`, Section 11.2).
 - Minimum 5 complete Protocol Batteries per value (equivalent to 5 Database Sessions per mode).
 - Condition for concluding: the coefficient of variation of Performance Score across complete Protocol Batteries must be below 10% before a result is finalized. Under `sc8-normalization-v1`, `abs(mean score) <= 1e-9` is undefined and does not pass stabilization. Up to 10 complete batteries may be run per value if the result has not stabilized within 5.
+- Once every candidate stabilizes, the unique highest mean complete-battery Performance Score is the Phase 2 Winner. Exactly equal top means are a tie: no arbitrary eDPI tie-break, no persisted Winner, and no automatic Phase 3 transition (see `RESEARCH.md`, Section 11.2).
 
 ### 3.4 Phase 3 — Final Narrowing (+/- 5%)
 
 The narrowing range is defined in `RESEARCH.md`, Section 11.3.
 
 - Repeat the same test structure as Phase 2, but around the Phase 2 Winner, at a +/- 5% range.
-- Output: a preliminary Best Sensitivity value.
+- After every Phase 3 candidate stabilizes, use the same unique-highest-mean rule. An exactly equal top mean is a tie and does not automatically emit a preliminary Best Sensitivity (see `RESEARCH.md`, Section 11.3).
+- Output: a preliminary Best Sensitivity value only when one unique Phase 3 Winner exists.
 
 ### 3.4.1 Session and Protocol Battery Contract
 
@@ -137,6 +139,8 @@ A database Session is one Test Mode at one sensitivity value. A Protocol Battery
 ### 3.4.2 Outlier Handling
 
 Apply adaptation first, then evaluate the 3-SD rule within the metric-specific homogeneous scope defined in `RESEARCH.md`, Section 12. Statistical outliers are flagged and audited but remain in the authoritative Winner score by default. Reports must show both the inclusive aggregate and the flagged-row-excluded sensitivity analysis. Exclusion from the authoritative score requires a separately documented acquisition/data-quality error.
+
+Each homogeneous scope is processed exactly once under the versioned scientific-rigor contract. The sensitivity-analysis score is a parallel diagnostic and must not replace the inclusive authoritative score used by Winner selection.
 
 ### 3.5 Step 4 — Performance Gate Check
 
@@ -156,6 +160,8 @@ Cycle N: Train at Best Sensitivity (5-10 sessions)
    -> If Grade improves   -> Continue training at current value
    -> Proceed to Cycle N+1
 ```
+
+The session count uses the Database Session contract in Section 3.4.1. The checkpoint after a training block uses the latest complete scored/graded training battery; this permits Grade and Performance Score comparison without pretending that a partial battery has a Grade.
 
 ---
 

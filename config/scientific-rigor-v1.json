@@ -1,0 +1,34 @@
+{
+  "schema_version": "sc8-scientific-rigor-v1",
+  "status": "accepted",
+  "immutable": true,
+  "contract_version": "sc8-scientific-rigor-v1",
+  "adaptation": {
+    "shot_fraction": 0.5,
+    "tracking_adaptation_blocks": 1,
+    "application_order": "finalize-after-session-before-analysis"
+  },
+  "outlier": {
+    "algorithm_version": "sc8-outlier-3sd-v1",
+    "sample_sd_multiplier": 3.0,
+    "comparison": "absolute-deviation-strictly-greater-than-threshold",
+    "passes": 1,
+    "statistical_disposition": "flag-and-include",
+    "exclusion_policy": "separate-documented-data-quality-error-only"
+  },
+  "fatigue": {
+    "algorithm_version": "sc8-fatigue-halves-v1",
+    "decline_threshold_percent": 15.0,
+    "percentage_scale": 100.0,
+    "comparison": "strictly-greater-than",
+    "split": "chronological-first-floor-half-second-remainder",
+    "zero_denominator_policy": "undefined-at-accepted-scoring-zero-tolerance",
+    "winner_disposition": "informational-include"
+  },
+  "grade": {
+    "contract_version": "sc8-grade-v1",
+    "reaction_source": "flick-close-authoritative-mean-reaction-time",
+    "consistency_source": "arithmetic-mean-four-mode-normalized-consistency-utilities",
+    "combination": "worse-of-reaction-and-consistency-tier"
+  }
+}

@@ -1,0 +1,16 @@
+using System;using System.Collections.Generic;using System.Collections.ObjectModel;using SensCalibr8.Core.Configuration;using SensCalibr8.Core.Domain;using SensCalibr8.Data.Repositories;using SensCalibr8.Services.Calculations;using SensCalibr8.TestLogic;
+namespace SensCalibr8.Integration
+{
+ public sealed class ContinuousTrainingPlan
+ {internal ContinuousTrainingPlan(TrainingCycleState state,int minimum,int maximum){State=state;MinimumSessions=minimum;MaximumSessions=maximum;}internal TrainingCycleState State{get;}public long CycleId=>State.CycleId;public double BestEdpi=>State.BestEdpi;public double Sensitivity=>State.Sensitivity;public int CompletedSessions=>State.SessionCount;public int MinimumSessions{get;}public int MaximumSessions{get;}}
+ public sealed class TrainingSessionLaunch
+ {internal TrainingSessionLaunch(ProtocolBatteryRecord battery,int ordinal,TestMode mode){Battery=battery;BatteryId=battery.Id.Value;Ordinal=ordinal;Mode=mode;}internal ProtocolBatteryRecord Battery{get;}public long BatteryId{get;}public int Ordinal{get;}public TestMode Mode{get;}}
+ public sealed class ContinuousTrainingWorkflow
+ {
+  private readonly ContinuousCycleService service;private readonly ContinuousCycleContract contract;private readonly DeterministicTargetSequencer sequencer;private readonly Dictionary<string,ProtocolBatteryRecord> batteries=new Dictionary<string,ProtocolBatteryRecord>();private readonly HashSet<string> launched=new HashSet<string>();
+  public ContinuousTrainingWorkflow(ContinuousCycleService service,ContinuousCycleContract contract,DeterministicTargetSequencer sequencer){this.service=service??throw new ArgumentNullException(nameof(service));this.contract=contract??throw new ArgumentNullException(nameof(contract));this.sequencer=sequencer??throw new ArgumentNullException(nameof(sequencer));}
+  public ContinuousTrainingPlan CreatePlan(long profileId,long cycleId){TrainingCycleState state=service.RequireTraining(profileId,cycleId);return new ContinuousTrainingPlan(state,contract.MinimumSessions,contract.MaximumSessions);}
+  public TrainingSessionLaunch Launch(ContinuousTrainingPlan plan,int ordinal,string date){if(plan==null)throw new ArgumentNullException(nameof(plan));if(ordinal<=plan.CompletedSessions||ordinal>plan.MaximumSessions)throw new ArgumentOutOfRangeException(nameof(ordinal));string launchKey=plan.CycleId+"|"+ordinal;if(!launched.Add(launchKey))throw new InvalidOperationException("Training session ordinal is already launched.");int block=(ordinal-1)/Enum.GetValues(typeof(TestMode)).Length+1,index=(ordinal-1)%Enum.GetValues(typeof(TestMode)).Length;string batteryKey=plan.CycleId+"|"+block;if(!batteries.TryGetValue(batteryKey,out ProtocolBatteryRecord battery)){battery=service.StartTrainingBattery(plan.State,date);batteries.Add(batteryKey,battery);}CounterbalancedOrder order=sequencer.CreateCounterbalancedOrder(plan.State.ProfileId,plan.State.CycleId,ProtocolPhase.PhaseThree,block,new[]{plan.State.CandidateId});return new TrainingSessionLaunch(battery,ordinal,order.Modes[index]);}
+  public CycleCheckpointRecord Finalize(ContinuousTrainingPlan plan,string date){if(plan==null)throw new ArgumentNullException(nameof(plan));return service.FinalizeTraining(plan.State.ProfileId,plan.State.CycleId,date);}
+ }
+}

@@ -80,6 +80,14 @@ Production raw input is received through `UnityEngine.InputSystem.InputSystem.on
 
 The runtime frame policy is parsed from `target_geometry_json`, applies its frozen Target Frame Rate and VSync count for the test scope, requires explicit confirmation when adaptive sync must be off, and restores the previous menu settings afterward.
 
+### 1.7 Versioned Scoring Boundary
+
+`FrozenCalibrationConfigurationLoader` validates and projects the top-level `formula_contract` into immutable `ScoringFormulaContract` values. Formula weights, multiplier, and authoritative observation counts may not be duplicated in scoring classes. `PerformanceScoringService` is plain C# under Services: it parses fixed mode bounds and Submovement bounds from the accepted configuration, performs high/low min-max utility normalization, aggregates post-adaptation observations, and returns version-tagged mode and battery results. Test Logic and UI do not calculate scores.
+
+Shot modes require exactly 15 authoritative resolved opportunities and Tracking requires exactly 54 authoritative one-second windows. Required-data omissions fail closed except for the two explicit accepted fallbacks: Far missing onset contributes its configured scoring ceiling without changing the raw null, and a zero-hit shot mode contributes Submovement Penalty 1.0 without fabricating a raw count. The shot formula is not final-clamped. A battery score requires four unique mode results and is their unweighted arithmetic mean.
+
+`SensitivityScorePersistenceService` verifies formula/normalization identity against the active accepted configuration before calling `SensitivityTestRepository`. The stored `sensitivity_tests.formula_version` is mandatory, `calibration_config_id` preserves normalization/configuration lineage, and `performance_score_by_mode` retains all four individual scores as JSON. Historical rows are never silently recalculated.
+
 ---
 
 ## 2. Timer Precision Requirement
@@ -187,7 +195,8 @@ cycles (
     cycle_number INTEGER NOT NULL,
     start_date TEXT NOT NULL,
     end_date TEXT,
-    outcome TEXT
+    outcome TEXT,
+    UNIQUE (profile_id, cycle_number)
 )
 
 protocol_candidates (
@@ -234,6 +243,7 @@ sessions (
     duration_sec INTEGER NOT NULL,
     fatigue_score_change_percentage REAL,
     fatigue_flag BOOLEAN NOT NULL DEFAULT 0,
+    fatigue_algorithm_version TEXT,
     UNIQUE (battery_id, mode)
 )
 
@@ -330,6 +340,26 @@ mouse_samples (
     UNIQUE (session_id, sample_index)
 )
 
+outlier_analysis_runs (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
+    calibration_config_id INTEGER NOT NULL REFERENCES calibration_configs(id) ON DELETE CASCADE,
+    phase INTEGER NOT NULL,
+    mode TEXT NOT NULL,
+    sensitivity_value REAL NOT NULL,
+    metric_name TEXT NOT NULL,
+    scope_key TEXT NOT NULL UNIQUE,
+    group_mean REAL NOT NULL,
+    sample_sd REAL NOT NULL,
+    threshold_value REAL NOT NULL,
+    inclusive_mean REAL NOT NULL,
+    flagged_excluded_mean REAL NOT NULL,
+    observation_count INTEGER NOT NULL,
+    flagged_count INTEGER NOT NULL,
+    algorithm_version TEXT NOT NULL
+)
+
 outlier_flags (
     id INTEGER PRIMARY KEY,
     session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
@@ -346,6 +376,7 @@ outlier_flags (
     is_data_quality_error BOOLEAN NOT NULL DEFAULT 0,
     excluded_from_authoritative_score BOOLEAN NOT NULL DEFAULT 0,
     disposition_reason TEXT,
+    analysis_run_id INTEGER REFERENCES outlier_analysis_runs(id) ON DELETE CASCADE,
     CHECK ((shot_id IS NOT NULL) <> (tracking_data_id IS NOT NULL))
 )
 
@@ -354,11 +385,17 @@ sensitivity_tests (
     profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
     calibration_config_id INTEGER NOT NULL REFERENCES calibration_configs(id) ON DELETE CASCADE,
+    battery_id INTEGER NOT NULL REFERENCES protocol_batteries(id) ON DELETE CASCADE,
     edpi REAL NOT NULL,
     cm_360 REAL NOT NULL,
     avg_performance_score REAL NOT NULL,
     performance_score_by_mode TEXT NOT NULL, -- JSON: {mode: score}, one entry per Test Mode
     grade TEXT,                      -- S / A / B / C / D
+    grade_contract_version TEXT,
+    reaction_tier TEXT,
+    consistency_tier TEXT,
+    close_reaction_time_ms REAL,
+    battery_consistency_utility REAL,
     formula_version TEXT NOT NULL,   -- must be recorded on every row, see RESEARCH.md Section 4
     phase INTEGER NOT NULL,          -- 1, 2, or 3 (Testing Protocol phase, see FEATURES.md)
     sample_size INTEGER NOT NULL
@@ -423,6 +460,32 @@ application_state (
     profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     updated_date TEXT NOT NULL
 )
+
+cycle_checkpoints (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_id INTEGER NOT NULL UNIQUE REFERENCES cycles(id) ON DELETE CASCADE,
+    source_phase_history_id INTEGER NOT NULL REFERENCES phase_history(id) ON DELETE CASCADE,
+    best_edpi REAL NOT NULL,
+    training_session_count INTEGER NOT NULL,
+    completed_training_battery_count INTEGER NOT NULL,
+    performance_score REAL NOT NULL,
+    final_grade TEXT NOT NULL,
+    contract_version TEXT NOT NULL,
+    checkpoint_date TEXT NOT NULL
+)
+
+recalibration_events (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    source_cycle_id INTEGER NOT NULL UNIQUE REFERENCES cycles(id) ON DELETE CASCADE,
+    destination_cycle_id INTEGER NOT NULL UNIQUE REFERENCES cycles(id) ON DELETE CASCADE,
+    source_phase_history_id INTEGER NOT NULL REFERENCES phase_history(id) ON DELETE CASCADE,
+    source_checkpoint_id INTEGER NOT NULL UNIQUE REFERENCES cycle_checkpoints(id) ON DELETE CASCADE,
+    baseline_edpi REAL NOT NULL,
+    contract_version TEXT NOT NULL,
+    triggered_date TEXT NOT NULL
+)
 ```
 
 ### 4.1 Schema Notes
@@ -432,21 +495,27 @@ application_state (
 - `calibration_configs` is immutable after first use. Phase 0 must populate every field from validated measurements; production sessions cannot reference an incomplete or draft configuration. The fixed signal constants must match `RESEARCH.md`, Section 5, while measured sampling, tolerance, bounds, tier cutpoints, geometry, Tracking, and confirmatory contracts are versioned outputs of Phase 0. `test_geometry_version = 'sc8-test-geometry-v1'` and `target_geometry_json` must serialize the accepted P0-R4 contract exactly, including the fixed 16:9/letterbox policy, camera/FOV, arena, target dimensions/placements, frame policy, safe viewport, crosshair, and Center-Hit zone; application code must not duplicate these as unrelated constants. P0-R6 fields must adopt the SHA-pinned payload from `sc8-p0-r6-scoring-statistics-contract-v1`: `normalization_bounds_json`, `submovement_bounds_by_mode_json`, `consistency_tier_cutpoints_json`, `scoring_zero_tolerance`, and `confirmatory_contract_json` may not be independently edited or partially copied.
 - Phase 0 accepted the complete projection as `calibration_config_v1` / `sc8-calibration-config-v1`. Its exact source is `calibration/plans/calibration-config-v1.json`, pinned by `p0-r7-calibration-config-accepted-v1.json`. Database creation must insert all 20 non-ID fields from `calibration_configs_record` as one transaction and reject any hash mismatch, missing field, draft status, non-immutable status, non-canonical embedded JSON, source dependency drift, or scalar/embedded-contract mismatch. No application layer may reconstruct or partially override this row.
 - Every `session` and `sensitivity_test` references the exact calibration configuration used. Together with `formula_version`, this preserves the meaning of historical raw data and scores.
+- Every newly persisted `sensitivity_test` also references exactly one complete four-mode `protocol_battery`. Migration 6 adds the nullable physical column for compatibility with pre-P5-R3 development rows, while the repository contract requires a positive unique `battery_id` for every new score and verifies profile/cycle/phase/eDPI/configuration lineage plus four distinct completed sessions before insertion.
 - A database `session` is exactly one Test Mode at one sensitivity value. A `protocol_battery` groups exactly four sessions (one per mode) at one sensitivity value. `UNIQUE (battery_id, mode)` prevents duplicate mode runs inside a battery; battery completion requires all four modes.
 - `protocol_candidates` stores the canonical final eDPI after floor application and deduplication. `UNIQUE (cycle_id, phase, edpi)` enforces one candidate per final eDPI in a phase. Candidate generation must not use intermediate rounding.
 - `protocol_candidate_sources` preserves every anchor/offset path that generated a candidate. A deduplicated candidate may therefore have multiple source rows; these rows must never be collapsed or overwritten.
 - Every `protocol_battery` references one canonical candidate. Its `sensitivity_value` and the candidate's value must represent the same final eDPI for the profile DPI.
 - `protocol_batteries.sensitivity_value` is the authoritative tested value for all child sessions. Any redundant sensitivity value recorded in shot or Tracking rows must match the parent battery exactly.
-- Fatigue is evaluated only after session capture and adaptation finalization. `fatigue_score_change_percentage` stores the first-half versus second-half Performance Score change, and `fatigue_flag` is true only for a decline greater than 15%; the flag must not exclude that session from Winner selection.
+- Fatigue is evaluated only after session capture and adaptation finalization. `fatigue_score_change_percentage` stores the first-half versus second-half Performance Score change, `fatigue_flag` is true only for a decline greater than 15%, and `fatigue_algorithm_version` preserves the accepted contract identity. A near-zero first-half denominator produces an undefined percentage and no flag. Fatigue never excludes the session from Winner selection.
 - `shots.is_center_hit` supports Center-Hit Percentage as a diagnostic only. Under `sc8-test-geometry-v1`, the center-zone radius is 50% of the projected target radius (25% of projected target area) and is versioned through `target_geometry_json`.
 - Every resolved `shots` row stores `resolution_timestamp`, `outcome_reason`, `final_aim_position`, and `final_precision_error`, including miss-clicks and timeouts. This makes the 15-observation P0-R6 Precision/Consistency aggregate complete without pretending a miss has zero error. `hit_timestamp`/`hit_position` remain nullable because they describe actual hits; `submovement_count` remains null on misses. For Far, `preview_timestamp` preserves visible-preview timing while `spawn_timestamp` is the center-reference activation timestamp that starts the Travel-Time contract. For Far missing-onset cases, `first_mouse_movement_timestamp` remains null and the scoring layer applies the explicit 1500 ms fallback without writing a fabricated timestamp.
 - For Micro-Correction, `initial_offset_distance` is the frozen reference-pixel radial offset while `final_precision_error` remains angular degrees. A hit requires timing-valid, filter-eligible `sc8-signal-pipeline-v1` evidence; miss-clicks/timeouts retain null `micro_adjustment_count` and `submovement_count`. Because the specification authorizes only one corrective-movement detector, both count columns store that same accepted event count for a Micro hit rather than introducing an unversioned second algorithm.
 - `shots.signed_overflick_underflick_deg` preserves raw Close/Far horizontal aim error as `final_aim_azimuth_deg - target_center_azimuth_deg`. Positive and negative values are coordinate directions only; any later Overflick/Underflick presentation must label them relative to the target's intended horizontal movement direction without changing the stored value.
 - `mouse_samples` preserves timestamped raw deltas and their calibrated angular representation. Filtering and angular velocity are derived analysis outputs and must not overwrite raw samples.
 - `calibration_configs.input_sampling_rate_hz` is the canonical 1000 Hz uniform processing grid frozen by P0-R3, not a claim that every physical mouse reports at that rate. `timing_acceptance_policy` is `integrity-modal-cadence`: timestamp order and nominal modal cadence are hard gates, while burst/gap counts remain diagnostics and gaps split resampling segments. `session_timing_diagnostics` stores the user's configured polling-rate metadata plus automatically measured cadence for every session. Manufacturer/model/firmware may be retained as optional audit metadata but must not participate in scoring or block profile creation.
-- `shots.is_outlier` is a denormalized any-metric indicator only. `outlier_flags` is authoritative and stores one metric-level audit record per flagged observation. Statistical flags default to inclusion; `excluded_from_authoritative_score` may be true only with a separately confirmed `is_data_quality_error` and documented reason.
+- `shots.is_outlier` is a denormalized any-metric indicator only. `outlier_analysis_runs` records one immutable pass per canonical `(profile, cycle, phase, mode, sensitivity, metric)` scope, including inclusive and flagged-excluded aggregates. `outlier_flags` stores the metric-level flagged observations linked to that pass. Statistical flags default to inclusion; `excluded_from_authoritative_score` may be true only with a separately confirmed `is_data_quality_error` and documented reason.
+- `sensitivity_tests.grade` is assigned once from the worse of the Close Flick Reaction tier and four-mode mean normalized Consistency tier. The two component tiers, source values, and `grade_contract_version` are persisted alongside the final Grade; Grade cannot be silently overwritten.
+- `config/scientific-rigor-v1.json` is the immutable operational contract for adaptation ordering, one-pass strict 3-SD behavior, first/second-half fatigue, and Grade combination. Its adaptation values must equal the frozen mode configuration and its outlier multiplier must equal `research-constants-v1`; loading fails closed on drift.
+- `config/continuous-cycle-v1.json` fixes the 5-10 Database Session training block, the three-cycle/strictly-below-5% plateau rule, and Phase 3 Winner baseline lineage. A `cycle_checkpoint` uses the latest complete scored/graded training battery after the required session count is reached; it is the one auditable value used for cycle-to-cycle Grade/score comparison.
+- `recalibration_events` permit exactly one automatic successor per source cycle/checkpoint. The destination cycle receives a fresh Phase 1 candidate set around the source Phase 3 Winner eDPI; profile `current_sensitivity` is never silently modified.
 - `protocol_batteries.purpose` separates exploratory data from fresh confirmatory data and prevents reuse of ranking batteries as confirmation evidence.
 - `significance_tests` stores the complete paired confirmatory decision. `significance_test_pairs` links every paired score back to the two source batteries. Test method, alternative, alpha, confidence interval, sample size, versions, and tie/winner result are mandatory for auditability.
+- Confirmatory ranking reads only battery-linked score rows whose parent battery is completed and has purpose `exploratory`. Confirmatory pair persistence accepts only completed purpose-`confirmatory` batteries whose persisted battery score exactly matches the pair score under the same configuration, formula, phase, and candidate eDPI. A battery may occur in only one persisted significance pair.
 - Under `sc8-confirmatory-v1`, `significance_test_pairs` must contain exactly 10 complete fresh pairs with pair indices 1-10, five A-first and five B-first. Each linked battery score is the unweighted mean of exactly four complete mode scores. The analysis enumerates all 1024 sign assignments with the accepted 1e-12 score-point inclusive-extremeness comparison guard; interrupted attempts remain raw evidence but do not receive a pair row until both batteries complete. The 95% Student-t interval is reported uncertainty, while the exact p-value alone controls Winner versus tie.
 - `crosshair_config` stores only the approved high-contrast hex color selected at profile creation: `#FFE600`, `#FF00FF`, `#FF3B30`, or `#FF9500`. Dot style and dot size are fixed by the application and must not be stored as user-editable settings.
 - `application_state` stores the persisted active profile singleton. The Service restores it at application startup, clears it when the user exits the active profile, and relies on its cascade when the referenced profile is deleted. The active profile cannot enter the deletion-confirmation flow; inactive deletion requires a Service-issued confirmation object before the Data Layer is called.
@@ -460,6 +529,13 @@ application_state (
 - Production condition sequences are generated from canonical SHA-256 audit material containing only `mode_contract_version`, profile, cycle, phase, mode, and battery repetition. Sensitivity value and blind candidate label are excluded. A compared candidate therefore receives the same per-mode condition sequence for the same repetition, and every sequence exposes its generator, contract version, seed hash, and canonical seed material for later persistence by P3-R5.
 - Close/Far sequencing must create three complete 3 x 3 offset-size blocks plus three rotating conditions; Tracking must create one complete pattern-size cross-product in each of its two blocks; Micro-Correction must remain Small and sample only the frozen radial pixel range. Every stationary target center must pass the full-radius edge-margin and top-HUD-reserve check before display.
 - Candidate presentation exposes only opaque ordered labels (`Candidate-01`, etc.) and never numeric sensitivity. Exploratory candidate order is deterministic-randomized and four-mode order rotates across battery repetition. Confirmatory order comes only from `sc8-confirmatory-v1`; its stable pairing seed uses the declared sorted candidate-eDPI pair, while the matched condition key binds both batteries in a pair to the same mode order and condition seeds.
+- `ProtocolPhase` has explicit persistent identities 1, 2, and 3, matching schema comments and constraints; persistence must never cast an implicit zero-based enum.
+- Phase 1 candidate offsets and their generation-rule lineage are loaded from immutable `config/protocol-constants-v1.json`. The complete candidate/source set is one transaction: no partial Phase 1 candidate set may survive an insertion failure.
+- Phase 1 completion is evaluated from the accepted frozen mode/formula contracts, not duplicated literals: each shot-based mode requires its full 30 resolved observations before the 15-observation authoritative half is scored; Tracking requires all 18 trials and 108 windows before its 9-trial/54-window authoritative half is scored.
+- Phase 2 generation and stabilization load only immutable `config/phase-two-protocol-v1.json`: offsets -10/0/+10%, 5-10 complete narrowing batteries per value, and strict Performance Score CV below 10%. A single Phase 1 winner uses `single_anchor`; a statistical tie uses `tie_union`. Both apply the eDPI floor before canonical deduplication and preserve every source path.
+- Phase 2 stabilization reads only battery-linked score rows whose parent is a completed purpose-`narrowing` battery under the accepted configuration/formula. Fewer than five complete batteries is `Collecting`; CV greater than or equal to 10%, or undefined due to the accepted near-zero mean tolerance, requires more evidence through battery 10; a non-passing value at 10 is `MaximumReachedWithoutStabilization`. Incomplete batteries never count.
+- Phase 2 Winner selection requires every Phase 2 candidate to stabilize, then selects only a unique highest mean complete-battery Performance Score. An exact highest-mean tie produces no `phase_history` row and may not generate Phase 3 candidates. The `phase_history` repository rejects duplicate `(profile, cycle, phase)` Winners.
+- Phase 3 generation loads only immutable `config/phase-three-protocol-v1.json`: offsets -5/0/+5% around the persisted Phase 2 Winner, `single_anchor` lineage, eDPI-floor-before-deduplication, and all source-path preservation. Phase 3 reuses the Phase 2 narrowing repetition/stabilization contract; its unique highest-mean Winner is persisted in Phase 3 history as preliminary Best Sensitivity. An exact tie persists no Best. Neither winner persistence automatically mutates `profiles.current_sensitivity`.
 - `session_attempts` preserves the lifecycle of incomplete work independently from a completed `sessions` row. It records profile/cycle/candidate/battery/configuration lineage, opaque blind label, sequence audit identity, attempt ordinal, and capturing/paused/cancelled/faulted/completed disposition. A completed mode may not begin another attempt in the same battery. `session_sequence_audits` stores the same immutable sequence identity for every completed session.
 - Completed session persistence is one transaction: raw session/timing/shot/tracking/window/mouse rows, completed-session sequence audit, post-capture adaptation finalization, attempt completion, and optional fourth-mode battery completion either all commit or all roll back. Shot adaptation uses the frozen fraction against the final inserted shot total in insertion order; Tracking adaptation is assigned only after completion using the frozen count of initial blocks. No capture row may provide a non-null adaptation flag before this transaction finalizes it.
 - `formula_version = 'sc8-performance-score-v1'` and `normalization_version = 'sc8-normalization-v1'` require 15 authoritative observations per shot mode, 54 Tracking windows, fixed P0-R6 metric bounds, Submovement bounds 1-6, fixed Consistency utility cutpoints 0.8/0.6/0.4/0.2, and scoring-zero tolerance `1e-9`. The shot formula is not final-clamped. A required data-quality omission invalidates the mode score; the only explicit scoring fallbacks are Far missing onset to 1500 ms and zero authoritative hits to Submovement Penalty 1.0, while raw nullable fields remain unchanged.

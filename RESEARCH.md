@@ -328,13 +328,17 @@ stabilized = CV_percent < 10
 
 The calculation uses sample standard deviation. If the mean is zero or too close to zero for numerically stable division under the approved scoring precision, CV is undefined and the candidate is not stabilized. It must never pass by substituting zero, suppressing the error, or using raw SD units. The scoring-precision tolerance must be frozen in Phase 0 configuration.
 
-Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.3 (Phase 2 — Progressive Narrowing); project-owner approvals dated 2026-07-14 for CV interpretation and statistical-tie candidate expansion; [NIST Coefficient of Variation](https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/coefvari.htm).
+After every Phase 2 candidate stabilizes, select the unique candidate with the highest mean complete-battery Performance Score as the Phase 2 Winner. An exactly equal highest mean is an explicit tie: do not apply an arbitrary eDPI tie-break, do not persist a Phase 2 Winner, and do not generate Phase 3 candidates automatically.
+
+Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.3 (Phase 2 — Progressive Narrowing); project-owner approvals dated 2026-07-14 for CV interpretation and statistical-tie candidate expansion, and dated 2026-07-17 for the post-stabilization Winner rule; [NIST Coefficient of Variation](https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/coefvari.htm).
 
 ### 11.3 Phase 3 — Final Narrowing
 
 - Candidate range: Phase 2 Winner, Winner +5%, and Winner -5%
 
-Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.4 (Phase 3 — Final Narrowing).
+Repeat the Phase 2 complete-battery repetition and stabilization structure around the Phase 2 Winner. After every Phase 3 candidate stabilizes, apply the same unique-highest-mean rule. An exactly equal highest mean is an explicit tie and must not emit a preliminary Best Sensitivity automatically.
+
+Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 7.4 (Phase 3 — Final Narrowing); project-owner approval dated 2026-07-17 for reusing the Phase 2 Winner rule.
 
 ### 11.4 Continuous Training Cycle
 
@@ -361,6 +365,8 @@ The 3-SD rule is flag-first:
 - Reports must show the inclusive aggregate and a sensitivity-analysis aggregate excluding statistically flagged observations.
 - Exclusion from the authoritative Winner calculation is permitted only when a separate documented acquisition/data-quality error is confirmed. Statistical extremeness alone is not a data-quality error.
 - Perform one documented detection pass against the complete eligible group; do not repeatedly remove a point and recompute until no flags remain.
+
+Production contract `sc8-outlier-3sd-v1` records one run per canonical homogeneous scope. The authoritative score remains inclusive. A separate flagged-row-excluded Performance Score is calculated only as sensitivity analysis and must never silently replace the authoritative score.
 
 Source: [SensCalibr8 Project Proposal V3.0](reference/SensCalibr8_Project_Proposal_v3.md), Section 8 (3-SD Scientific Rigor requirement); project-owner approval dated 2026-07-14; [NIST Detection of Outliers](https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h.htm) (investigate and retain potential outliers rather than automatically deleting them).
 
@@ -431,9 +437,13 @@ IF fatigue_drop_percentage > 15:
 
 A fatigue flag is informational. It must not exclude the session from Winner selection or alter its stored Performance Score.
 
+Production contract `sc8-fatigue-halves-v1` assigns `floor(n/2)` chronological post-adaptation observations to the first half and the remainder to the second half. If the first-half score is zero within the accepted scoring-zero tolerance, the percentage is undefined and no fatigue flag is emitted; raw half scores and the contract version remain auditable.
+
 ### 17.3 Grade Combination
 
 Assign separate Reaction Time and Consistency tiers, then use the worse of the two as the final Grade. Under `sc8-consistency-tier-v1`, average the four complete mode-level normalized Consistency utilities in one Protocol Battery and assign S `[0.8,1]`, A `[0.6,0.8)`, B `[0.4,0.6)`, C `[0.2,0.4)`, or D `[0,0.2)`. These fixed equal-width utility bands are an engineering interpretation scale, not current-user percentiles. Reaction Grade uses the authoritative Close Flick mean Reaction Time because this is the visual-response interval matched to the Section 6 benchmark; Far's primary speed metric is Travel Time, Micro's is Correction Time, and Tracking has no reaction event.
+
+Production contract `sc8-grade-v1` persists the Reaction tier, Consistency tier, both source values, and the resulting worse tier. Grade is assigned once per scored Protocol Battery and cannot be overwritten without creating new versioned evidence.
 
 ### 17.4 Plateau Detection
 
@@ -443,6 +453,8 @@ A plateau occurs only when both conditions are true:
 - The absolute Performance Score change between the first and third cycle is less than 5% relative to the first cycle's score.
 
 When a plateau is detected, automatically begin a new Phase 1-3 recalibration using the current value as the new baseline.
+
+Production contract `sc8-continuous-cycle-v1` counts Database Sessions, not Protocol Batteries, for the 5-10 training block. The cycle checkpoint uses the latest complete scored and graded training battery after that count has been reached. It compares the first and third checkpoint scores with `abs(last - first) / abs(first) x 100`; a change exactly equal to 5% does not plateau, and a near-zero first score does not trigger plateau automatically. The new Phase 1 anchor is the persisted source Phase 3 Winner eDPI, not an automatic update to the user's live-game setting.
 
 ### 17.5 Target Geometry Policy
 

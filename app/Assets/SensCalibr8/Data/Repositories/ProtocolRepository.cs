@@ -21,23 +21,24 @@ namespace SensCalibr8.Data.Repositories
 
         public ProtocolCandidateRecord CreateCandidateWithSources(ProtocolCandidateRecord candidate, IReadOnlyList<ProtocolCandidateSourceRecord> sources)
         {
-            if (candidate == null) throw new ArgumentNullException(nameof(candidate));
-            if (sources == null) throw new ArgumentNullException(nameof(sources));
+            return CreateCandidateSetWithSources(new[]{new ProtocolCandidateCreateRequest(candidate,sources)})[0];
+        }
+
+        public IReadOnlyList<ProtocolCandidateRecord> CreateCandidateSetWithSources(IReadOnlyList<ProtocolCandidateCreateRequest> requests)
+        {
+            if(requests==null)throw new ArgumentNullException(nameof(requests));if(requests.Count==0)throw new ArgumentException("Candidate set is required.",nameof(requests));
             return execution.Write("create protocol candidate", connection =>
             {
                 using SqliteTransaction transaction = connection.BeginImmediateTransaction();
-                VerifyCycleBelongsToProfile(connection, candidate.CycleId, candidate.ProfileId);
-                connection.Execute(@"INSERT INTO protocol_candidates(profile_id, cycle_id, phase, edpi, sensitivity_value, generation_rule, created_date)
-VALUES (@profile_id,@cycle_id,@phase,@edpi,@sensitivity_value,@generation_rule,@created_date);", CandidateParameters(candidate));
-                long id = connection.LastInsertRowId();
-                foreach (ProtocolCandidateSourceRecord source in sources)
+                var created=new List<ProtocolCandidateRecord>(requests.Count);
+                foreach(ProtocolCandidateCreateRequest request in requests)
                 {
-                    if (source == null) throw new ArgumentException("Candidate sources cannot contain null.", nameof(sources));
-                    connection.Execute(@"INSERT INTO protocol_candidate_sources(candidate_id, anchor_edpi, offset_percent, pre_floor_edpi, floor_applied)
-VALUES (@candidate_id,@anchor_edpi,@offset_percent,@pre_floor_edpi,@floor_applied);", new Dictionary<string, object> { ["@candidate_id"] = id, ["@anchor_edpi"] = source.AnchorEdpi, ["@offset_percent"] = source.OffsetPercent, ["@pre_floor_edpi"] = source.PreFloorEdpi, ["@floor_applied"] = source.FloorApplied });
+                    ProtocolCandidateRecord candidate=request.Candidate;VerifyCycleBelongsToProfile(connection,candidate.CycleId,candidate.ProfileId);connection.Execute(@"INSERT INTO protocol_candidates(profile_id, cycle_id, phase, edpi, sensitivity_value, generation_rule, created_date)
+VALUES (@profile_id,@cycle_id,@phase,@edpi,@sensitivity_value,@generation_rule,@created_date);",CandidateParameters(candidate));long id=connection.LastInsertRowId();foreach(ProtocolCandidateSourceRecord source in request.Sources){if(source==null)throw new ArgumentException("Candidate sources cannot contain null.",nameof(requests));connection.Execute(@"INSERT INTO protocol_candidate_sources(candidate_id, anchor_edpi, offset_percent, pre_floor_edpi, floor_applied)
+VALUES (@candidate_id,@anchor_edpi,@offset_percent,@pre_floor_edpi,@floor_applied);",new Dictionary<string,object>{{"@candidate_id",id},{"@anchor_edpi",source.AnchorEdpi},{"@offset_percent",source.OffsetPercent},{"@pre_floor_edpi",source.PreFloorEdpi},{"@floor_applied",source.FloorApplied}});}created.Add(new ProtocolCandidateRecord(id,candidate.ProfileId,candidate.CycleId,candidate.Phase,candidate.Edpi,candidate.SensitivityValue,candidate.GenerationRule,candidate.CreatedDate));
                 }
                 transaction.Commit();
-                return new ProtocolCandidateRecord(id, candidate.ProfileId, candidate.CycleId, candidate.Phase, candidate.Edpi, candidate.SensitivityValue, candidate.GenerationRule, candidate.CreatedDate);
+                return (IReadOnlyList<ProtocolCandidateRecord>)created;
             });
         }
 

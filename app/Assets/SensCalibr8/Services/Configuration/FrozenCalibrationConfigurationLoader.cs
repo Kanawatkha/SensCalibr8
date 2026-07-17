@@ -78,10 +78,29 @@ namespace SensCalibr8.Services.Configuration
             CalibrationConfigurationRecord record = BuildRecord(recordElement);
             ValidateEmbeddedContracts(record, formulaVersion, modeContractVersion, consistencyTierVersion, confirmatoryContractVersion, root);
             IReadOnlyList<SourceContract> sources = ValidateSources(root, repositoryRoot);
+            ScoringFormulaContract scoringFormula = BuildScoringFormula(root, formulaVersion);
 
             return new FrozenCalibrationConfiguration(
                 new CalibrationConfigVersion(ExpectedConfigVersion), new FormulaVersion(formulaVersion),
-                ExpectedContractId, sha256, record, sources);
+                ExpectedContractId, sha256, record, sources, scoringFormula);
+        }
+
+        private static ScoringFormulaContract BuildScoringFormula(JsonElement root, string formulaVersion)
+        {
+            JsonElement contract = GetRequiredProperty(root, "formula_contract");
+            RequireString(contract, "formula_version", formulaVersion);
+            JsonElement aggregation = GetRequiredProperty(contract, "component_aggregation");
+            JsonElement formula = GetRequiredProperty(contract, "formula");
+            JsonElement shot = GetRequiredProperty(formula, "shot_mode_weights");
+            JsonElement tracking = GetRequiredProperty(formula, "tracking_weights");
+            return new ScoringFormulaContract(formulaVersion, RequiredFiniteNumber(formula, "multiplier"),
+                RequiredInt(aggregation, "authoritative_shot_observations"),
+                RequiredInt(aggregation, "authoritative_tracking_windows"),
+                RequiredFiniteNumber(shot, "consistency"), RequiredFiniteNumber(shot, "accuracy"),
+                RequiredFiniteNumber(shot, "reaction_speed"), RequiredFiniteNumber(shot, "precision"),
+                RequiredFiniteNumber(shot, "submovement_penalty_subtracted"),
+                RequiredFiniteNumber(tracking, "consistency"), RequiredFiniteNumber(tracking, "time_on_target"),
+                RequiredFiniteNumber(tracking, "precision"));
         }
 
         private static CalibrationConfigurationRecord BuildRecord(JsonElement record)

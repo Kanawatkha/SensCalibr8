@@ -46,15 +46,18 @@ namespace SensCalibr8.Tests
                 "protocol_candidate_sources", "protocol_batteries", "sessions", "session_timing_diagnostics", "shots",
                 "tracking_data", "tracking_windows", "mouse_samples", "outlier_flags", "sensitivity_tests",
                 "significance_tests", "significance_test_pairs", "phase_history", "injury_risk_flags", "application_state",
-                "session_attempts", "session_sequence_audits"
+                "session_attempts", "session_sequence_audits", "outlier_analysis_runs", "cycle_checkpoints", "recalibration_events"
             }, tables);
-            Assert.That(Scalar(connection, "PRAGMA user_version;"), Is.EqualTo(5));
+            Assert.That(Scalar(connection, "PRAGMA user_version;"), Is.EqualTo(8));
             Assert.That(Scalar(connection, "SELECT COUNT(*) FROM schema_migrations WHERE version=1 AND name='initial_schema';"), Is.EqualTo(1));
             Assert.That(Scalar(connection, "SELECT COUNT(*) FROM schema_migrations WHERE version=2 AND name='active_profile_state';"), Is.EqualTo(1));
             Assert.That(Scalar(connection, "SELECT COUNT(*) FROM schema_migrations WHERE version=3 AND name='session_battery_lifecycle';"), Is.EqualTo(1));
             Assert.That(Scalar(connection, "SELECT COUNT(*) FROM schema_migrations WHERE version=4 AND name='signed_flick_error';"), Is.EqualTo(1));
             Assert.That(Scalar(connection, "SELECT COUNT(*) FROM schema_migrations WHERE version=5 AND name='far_preview_timestamp';"), Is.EqualTo(1));
-            Assert.That(Scalar(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND sql IS NOT NULL;"), Is.EqualTo(27));
+            Assert.That(Scalar(connection, "SELECT COUNT(*) FROM schema_migrations WHERE version=6 AND name='sensitivity_test_battery_lineage';"), Is.EqualTo(1));
+            Assert.That(Scalar(connection, "SELECT COUNT(*) FROM schema_migrations WHERE version=7 AND name='scientific_rigor_audit';"), Is.EqualTo(1));
+            Assert.That(Scalar(connection, "SELECT COUNT(*) FROM schema_migrations WHERE version=8 AND name='continuous_cycle_plateau';"), Is.EqualTo(1));
+            Assert.That(Scalar(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND sql IS NOT NULL;"), Is.EqualTo(34));
         }
 
         [Test]
@@ -79,7 +82,7 @@ namespace SensCalibr8.Tests
                     Assert.That(Convert.ToString(row["on_delete"]), Is.EqualTo("CASCADE"), table);
                 }
             }
-            Assert.That(foreignKeyCount, Is.EqualTo(41));
+            Assert.That(foreignKeyCount, Is.EqualTo(54));
         }
 
         [Test]
@@ -120,7 +123,7 @@ namespace SensCalibr8.Tests
             Assert.That(Scalar(connection, "SELECT COUNT(*) FROM calibration_configs;"), Is.EqualTo(1));
             Assert.That(TextScalar(connection, "SELECT config_version FROM calibration_configs;"), Is.EqualTo(configuration.Record.ConfigVersion));
             Assert.That(TextScalar(connection, "SELECT tracking_contract_json FROM calibration_configs;"), Is.EqualTo(configuration.Record.TrackingContractJson));
-            Assert.That(Scalar(connection, "SELECT COUNT(*) FROM schema_migrations;"), Is.EqualTo(5));
+            Assert.That(Scalar(connection, "SELECT COUNT(*) FROM schema_migrations;"), Is.EqualTo(8));
         }
 
         [Test]

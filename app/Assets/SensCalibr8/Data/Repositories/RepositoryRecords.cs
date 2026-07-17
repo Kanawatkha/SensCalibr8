@@ -67,6 +67,13 @@ namespace SensCalibr8.Data.Repositories
         public double AnchorEdpi { get; } public double OffsetPercent { get; } public double PreFloorEdpi { get; } public bool FloorApplied { get; }
     }
 
+    public sealed class ProtocolCandidateCreateRequest
+    {
+        public ProtocolCandidateCreateRequest(ProtocolCandidateRecord candidate,IReadOnlyList<ProtocolCandidateSourceRecord> sources)
+        { Candidate=candidate??throw new ArgumentNullException(nameof(candidate));Sources=sources??throw new ArgumentNullException(nameof(sources));if(sources.Count==0)throw new ArgumentException("At least one candidate source is required.",nameof(sources)); }
+        public ProtocolCandidateRecord Candidate{get;}public IReadOnlyList<ProtocolCandidateSourceRecord> Sources{get;}
+    }
+
     public sealed class ProtocolBatteryRecord
     {
         public ProtocolBatteryRecord(long? id, long profileId, long cycleId, long candidateId, double sensitivityValue, long phase, string purpose, string startedDate, string completedDate)
@@ -183,5 +190,13 @@ namespace SensCalibr8.Data.Repositories
         public SessionFinalizationResult(long sessionId,bool batteryCompleted,int shotAdaptationCount,int trackingAdaptationCount)
         { SessionId=sessionId;BatteryCompleted=batteryCompleted;ShotAdaptationCount=shotAdaptationCount;TrackingAdaptationCount=trackingAdaptationCount; }
         public long SessionId { get; } public bool BatteryCompleted { get; } public int ShotAdaptationCount { get; } public int TrackingAdaptationCount { get; }
+    }
+
+    public sealed class SensitivityTestRecord
+    {
+        public SensitivityTestRecord(long? id,long profileId,long cycleId,long calibrationConfigId,long batteryId,double edpi,double cm360,double averagePerformanceScore,string performanceScoreByModeJson,string grade,string formulaVersion,long phase,long sampleSize)
+        { Id=id;ProfileId=Positive(profileId);CycleId=Positive(cycleId);CalibrationConfigId=Positive(calibrationConfigId);BatteryId=Positive(batteryId);Edpi=FinitePositive(edpi);Cm360=FinitePositive(cm360);AveragePerformanceScore=Finite(averagePerformanceScore);PerformanceScoreByModeJson=Require(performanceScoreByModeJson);Grade=grade;FormulaVersion=Require(formulaVersion);Phase=Positive(phase);SampleSize=Positive(sampleSize); }
+        public long? Id{get;}public long ProfileId{get;}public long CycleId{get;}public long CalibrationConfigId{get;}public long BatteryId{get;}public double Edpi{get;}public double Cm360{get;}public double AveragePerformanceScore{get;}public string PerformanceScoreByModeJson{get;}public string Grade{get;}public string FormulaVersion{get;}public long Phase{get;}public long SampleSize{get;}
+        private static long Positive(long value)=>value>0?value:throw new ArgumentOutOfRangeException();private static string Require(string value)=>!string.IsNullOrWhiteSpace(value)?value:throw new ArgumentException("Sensitivity-test field is required.");private static double Finite(double value)=>!double.IsNaN(value)&&!double.IsInfinity(value)?value:throw new ArgumentOutOfRangeException();private static double FinitePositive(double value)=>Finite(value)>0d?value:throw new ArgumentOutOfRangeException();
     }
 }

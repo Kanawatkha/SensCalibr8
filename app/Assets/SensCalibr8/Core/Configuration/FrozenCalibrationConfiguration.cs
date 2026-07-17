@@ -12,7 +12,8 @@ namespace SensCalibr8.Core.Configuration
             string contractId,
             string sha256,
             CalibrationConfigurationRecord record,
-            IReadOnlyList<SourceContract> sourceContracts)
+            IReadOnlyList<SourceContract> sourceContracts,
+            ScoringFormulaContract scoringFormula)
         {
             ConfigVersion = configVersion;
             FormulaVersion = formulaVersion;
@@ -20,6 +21,7 @@ namespace SensCalibr8.Core.Configuration
             Sha256 = Require(sha256, nameof(sha256));
             Record = record ?? throw new ArgumentNullException(nameof(record));
             SourceContracts = sourceContracts ?? throw new ArgumentNullException(nameof(sourceContracts));
+            ScoringFormula = scoringFormula ?? throw new ArgumentNullException(nameof(scoringFormula));
         }
 
         public CalibrationConfigVersion ConfigVersion { get; }
@@ -28,6 +30,7 @@ namespace SensCalibr8.Core.Configuration
         public string Sha256 { get; }
         public CalibrationConfigurationRecord Record { get; }
         public IReadOnlyList<SourceContract> SourceContracts { get; }
+        public ScoringFormulaContract ScoringFormula { get; }
 
         private static string Require(string value, string field) => !string.IsNullOrWhiteSpace(value)
             ? value : throw new ArgumentException(field + " is required.", field);

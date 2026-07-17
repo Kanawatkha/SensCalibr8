@@ -120,7 +120,7 @@ namespace SensCalibr8.Tests
             AssertLifecycleError("engine_configuration_version_mismatch", () => new TestEngineStateMachine(new StubMode(TestMode.FlickClose), mismatch, configuration));
 
             var incomplete = new FrozenCalibrationConfiguration(configuration.ConfigVersion, configuration.FormulaVersion,
-                configuration.ContractId, configuration.Sha256, configuration.Record, Array.Empty<SourceContract>());
+                configuration.ContractId, configuration.Sha256, configuration.Record, Array.Empty<SourceContract>(), configuration.ScoringFormula);
             AssertLifecycleError("engine_configuration_incomplete", () => new TestEngineStateMachine(new StubMode(TestMode.FlickClose), session, incomplete));
         }
 

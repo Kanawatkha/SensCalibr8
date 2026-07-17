@@ -1,0 +1,9 @@
+{
+  "schema_version": "sc8-phase-three-protocol-v1",
+  "status": "accepted",
+  "immutable": true,
+  "contract_version": "sc8-phase-three-protocol-v1",
+  "candidate_offsets_percent": [-5, 0, 5],
+  "battery_purpose": "narrowing",
+  "generation_rule": "single_anchor"
+}

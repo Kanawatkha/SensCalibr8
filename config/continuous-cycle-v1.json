@@ -1,0 +1,9 @@
+{
+  "schema_version":"sc8-continuous-cycle-v1",
+  "status":"accepted",
+  "immutable":true,
+  "contract_version":"sc8-continuous-cycle-v1",
+  "training":{"minimum_database_sessions":5,"maximum_database_sessions":10,"purpose":"training","best_source":"phase-three-winner-edpi","checkpoint_source":"latest-complete-training-battery"},
+  "plateau":{"consecutive_cycles":3,"relative_score_change_percent":5.0,"percentage_scale":100.0,"comparison":"strictly-less-than","zero_baseline_policy":"not-plateau"},
+  "recalibration":{"trigger":"plateau","new_phase":"phase-one","baseline_source":"source-phase-three-winner-edpi","generation_rule":"phase1_offsets"}
+}

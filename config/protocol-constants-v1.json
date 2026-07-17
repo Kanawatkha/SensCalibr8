@@ -1,0 +1,11 @@
+{
+  "schema_version": "sc8-protocol-constants-v1",
+  "status": "accepted",
+  "immutable": true,
+  "constants_version": "sc8-protocol-constants-v1",
+  "phase_one": {
+    "candidate_count": 7,
+    "candidate_offsets_percent": [-20.0, -10.0, -5.0, 0.0, 5.0, 10.0, 20.0],
+    "generation_rule": "phase1_offsets"
+  }
+}

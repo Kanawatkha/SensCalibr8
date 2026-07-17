@@ -10,8 +10,81 @@ namespace SensCalibr8.Data.Migrations
             new SchemaMigration(2, "active_profile_state", ActiveProfileStateSql),
             new SchemaMigration(3, "session_battery_lifecycle", SessionBatteryLifecycleSql),
             new SchemaMigration(4, "signed_flick_error", SignedFlickErrorSql),
-            new SchemaMigration(5, "far_preview_timestamp", FarPreviewTimestampSql)
+            new SchemaMigration(5, "far_preview_timestamp", FarPreviewTimestampSql),
+            new SchemaMigration(6, "sensitivity_test_battery_lineage", SensitivityTestBatteryLineageSql),
+            new SchemaMigration(7, "scientific_rigor_audit", ScientificRigorAuditSql),
+            new SchemaMigration(8, "continuous_cycle_plateau", ContinuousCyclePlateauSql)
         };
+
+        private const string ContinuousCyclePlateauSql = @"
+CREATE UNIQUE INDEX idx_cycles_profile_cycle_number ON cycles(profile_id,cycle_number);
+CREATE TABLE cycle_checkpoints (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_id INTEGER NOT NULL UNIQUE REFERENCES cycles(id) ON DELETE CASCADE,
+    source_phase_history_id INTEGER NOT NULL REFERENCES phase_history(id) ON DELETE CASCADE,
+    best_edpi REAL NOT NULL,
+    training_session_count INTEGER NOT NULL,
+    completed_training_battery_count INTEGER NOT NULL,
+    performance_score REAL NOT NULL,
+    final_grade TEXT NOT NULL CHECK (final_grade IN ('S','A','B','C','D')),
+    contract_version TEXT NOT NULL,
+    checkpoint_date TEXT NOT NULL
+);
+CREATE TABLE recalibration_events (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    source_cycle_id INTEGER NOT NULL UNIQUE REFERENCES cycles(id) ON DELETE CASCADE,
+    destination_cycle_id INTEGER NOT NULL UNIQUE REFERENCES cycles(id) ON DELETE CASCADE,
+    source_phase_history_id INTEGER NOT NULL REFERENCES phase_history(id) ON DELETE CASCADE,
+    source_checkpoint_id INTEGER NOT NULL UNIQUE REFERENCES cycle_checkpoints(id) ON DELETE CASCADE,
+    baseline_edpi REAL NOT NULL,
+    contract_version TEXT NOT NULL,
+    triggered_date TEXT NOT NULL
+);
+CREATE INDEX idx_cycle_checkpoints_profile_id ON cycle_checkpoints(profile_id);
+CREATE INDEX idx_recalibration_events_profile_id ON recalibration_events(profile_id);
+PRAGMA user_version = 8;
+";
+
+        private const string ScientificRigorAuditSql = @"
+CREATE TABLE outlier_analysis_runs (
+    id INTEGER PRIMARY KEY,
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    cycle_id INTEGER NOT NULL REFERENCES cycles(id) ON DELETE CASCADE,
+    calibration_config_id INTEGER NOT NULL REFERENCES calibration_configs(id) ON DELETE CASCADE,
+    phase INTEGER NOT NULL CHECK (phase IN (1, 2, 3)),
+    mode TEXT NOT NULL CHECK (mode IN ('flick_close', 'flick_far', 'tracking', 'micro_correction')),
+    sensitivity_value REAL NOT NULL,
+    metric_name TEXT NOT NULL,
+    scope_key TEXT NOT NULL UNIQUE,
+    group_mean REAL NOT NULL,
+    sample_sd REAL NOT NULL,
+    threshold_value REAL NOT NULL,
+    inclusive_mean REAL NOT NULL,
+    flagged_excluded_mean REAL NOT NULL,
+    observation_count INTEGER NOT NULL,
+    flagged_count INTEGER NOT NULL,
+    algorithm_version TEXT NOT NULL
+);
+ALTER TABLE outlier_flags ADD COLUMN analysis_run_id INTEGER REFERENCES outlier_analysis_runs(id) ON DELETE CASCADE;
+ALTER TABLE sessions ADD COLUMN fatigue_algorithm_version TEXT;
+ALTER TABLE sensitivity_tests ADD COLUMN grade_contract_version TEXT;
+ALTER TABLE sensitivity_tests ADD COLUMN reaction_tier TEXT CHECK (reaction_tier IS NULL OR reaction_tier IN ('S','A','B','C','D'));
+ALTER TABLE sensitivity_tests ADD COLUMN consistency_tier TEXT CHECK (consistency_tier IS NULL OR consistency_tier IN ('S','A','B','C','D'));
+ALTER TABLE sensitivity_tests ADD COLUMN close_reaction_time_ms REAL;
+ALTER TABLE sensitivity_tests ADD COLUMN battery_consistency_utility REAL;
+CREATE INDEX idx_outlier_analysis_runs_profile_id ON outlier_analysis_runs(profile_id);
+CREATE INDEX idx_outlier_analysis_runs_cycle_id ON outlier_analysis_runs(cycle_id);
+CREATE INDEX idx_outlier_flags_analysis_run_id ON outlier_flags(analysis_run_id);
+PRAGMA user_version = 7;
+";
+
+        private const string SensitivityTestBatteryLineageSql = @"
+ALTER TABLE sensitivity_tests ADD COLUMN battery_id INTEGER REFERENCES protocol_batteries(id) ON DELETE CASCADE;
+CREATE UNIQUE INDEX idx_sensitivity_tests_battery_id ON sensitivity_tests(battery_id) WHERE battery_id IS NOT NULL;
+PRAGMA user_version = 6;
+";
 
         private const string FarPreviewTimestampSql = @"
 ALTER TABLE shots ADD COLUMN preview_timestamp REAL;

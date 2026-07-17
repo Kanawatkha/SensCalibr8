@@ -12,9 +12,9 @@ namespace SensCalibr8.Core.Domain
 
     public enum ProtocolPhase
     {
-        PhaseOne,
-        PhaseTwo,
-        PhaseThree
+        PhaseOne = 1,
+        PhaseTwo = 2,
+        PhaseThree = 3
     }
 
     public enum PerformanceGrade

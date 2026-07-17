@@ -24,6 +24,7 @@ namespace SensCalibr8.Tests
             Assert.That(configuration.Record.NormalizationVersion, Is.EqualTo(parity.normalization_version));
             Assert.That(configuration.Record.SignalPipelineVersion, Is.EqualTo(parity.signal_pipeline_version));
             Assert.That(configuration.Record.TestGeometryVersion, Is.EqualTo(parity.test_geometry_version));
+            Assert.That(configuration.ScoringFormula.FormulaVersion, Is.EqualTo(parity.formula_version));
         }
 
         [Test]
@@ -32,6 +33,7 @@ namespace SensCalibr8.Tests
             AssertNoPublicSetters(typeof(FrozenCalibrationConfiguration));
             AssertNoPublicSetters(typeof(CalibrationConfigurationRecord));
             AssertNoPublicSetters(typeof(SourceContract));
+            AssertNoPublicSetters(typeof(ScoringFormulaContract));
         }
 
         [Test]

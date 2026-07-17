@@ -1,0 +1,13 @@
+{
+  "schema_version": "sc8-phase-two-protocol-v1",
+  "status": "accepted",
+  "immutable": true,
+  "contract_version": "sc8-phase-two-protocol-v1",
+  "candidate_offsets_percent": [-10, 0, 10],
+  "minimum_complete_batteries_per_value": 5,
+  "maximum_complete_batteries_per_value": 10,
+  "stabilization_cv_percent_exclusive_upper": 10,
+  "battery_purpose": "narrowing",
+  "single_anchor_generation_rule": "single_anchor",
+  "tie_generation_rule": "tie_union"
+}
