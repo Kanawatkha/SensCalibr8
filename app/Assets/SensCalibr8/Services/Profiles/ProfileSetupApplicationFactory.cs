@@ -2,6 +2,7 @@ using System;
 using SensCalibr8.Core.Configuration;
 using SensCalibr8.Data.Persistence;
 using SensCalibr8.Data.Repositories;
+using SensCalibr8.Services.Analysis;
 using SensCalibr8.Services.Calculations;
 using SensCalibr8.Services.Configuration;
 
@@ -22,7 +23,9 @@ namespace SensCalibr8.Services.Profiles
             var calculations = new SensitivityCalculationService(constants);
             var warnings = new ErgonomicWarningService(new InjuryRiskFlagRepository(connectionFactory), calculations, constants, clock);
             return new ProfileSetupApplicationService(lifecycle, calculations, warnings,
-                new ProfileDashboardService(new ProfileDashboardRepository(connectionFactory), warnings));
+                new ProfileDashboardService(new ProfileDashboardRepository(connectionFactory), warnings,
+                    new ImmediateFeedbackService(new ImmediateFeedbackRepository(connectionFactory))),
+                new CrossProfileComparisonService(new CrossProfileComparisonRepository(connectionFactory)));
         }
     }
 }

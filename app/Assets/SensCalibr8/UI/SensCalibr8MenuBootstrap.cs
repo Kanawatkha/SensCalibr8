@@ -4,6 +4,7 @@ using System.IO;
 using SensCalibr8.Core.Configuration;
 using SensCalibr8.Core.Domain;
 using SensCalibr8.Services.Profiles;
+using SensCalibr8.Services.Analysis;
 using UnityEngine;
 
 namespace SensCalibr8.UI
@@ -25,6 +26,9 @@ namespace SensCalibr8.UI
         private ProfileDashboardPresentation dashboard;
         private bool showingSetup;
         private bool showingDashboard;
+        private bool showingComparison;
+        private readonly Dictionary<long, bool> comparisonSelection = new Dictionary<long, bool>();
+        private IReadOnlyList<ProfileComparisonPresentation> comparisonRows = Array.Empty<ProfileComparisonPresentation>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void CreateMenu()
@@ -52,7 +56,7 @@ namespace SensCalibr8.UI
             GUILayout.BeginArea(new Rect(20f, 20f, Screen.width - 40f, Screen.height - 40f));
             GUILayout.Label("SensCalibr8");
             if (!string.IsNullOrWhiteSpace(startupError)) GUILayout.Label("Startup error: " + startupError);
-            else if (showingSetup) DrawSetup(); else if (showingDashboard) DrawDashboard(); else DrawSlots();
+            else if (showingSetup) DrawSetup(); else if (showingDashboard) DrawDashboard(); else if (showingComparison) DrawComparison(); else DrawSlots();
             GUILayout.EndArea();
         }
 
@@ -88,6 +92,7 @@ namespace SensCalibr8.UI
                 GUILayout.EndHorizontal();
             }
             if (GUILayout.Button("Create New Slot")) showingSetup = true;
+            if (GUILayout.Button("Open Comparison Page")) { comparisonSelection.Clear(); comparisonRows = Array.Empty<ProfileComparisonPresentation>(); showingComparison = true; }
             DrawDeletionConfirmation();
             if (!string.IsNullOrWhiteSpace(slotMessage)) GUILayout.Label(slotMessage);
         }
@@ -146,9 +151,12 @@ namespace SensCalibr8.UI
             if (dashboard == null) { showingDashboard = false; return; }
             ProfileSetupPresentation active = dashboard.Profile;
             GUILayout.Label("Dashboard | " + active.Name);
-            GUILayout.Label("Best Sensitivity: not available until the calibration protocol is complete.");
+            ImmediateFeedbackPresentation feedback = dashboard.ImmediateFeedback;
+            GUILayout.Label("Best Sensitivity: " + (feedback.BestSensitivity.HasValue ? feedback.BestSensitivity.Value.ToString("G17") : "not available until Phase 3 has a unique Winner."));
             GUILayout.Label("Current Grade: " + (string.IsNullOrWhiteSpace(dashboard.LatestGrade) ? "not available until scoring is complete." : dashboard.LatestGrade));
+            GUILayout.Label("Latest Performance Score: " + (feedback.LatestPerformanceScore.HasValue ? feedback.LatestPerformanceScore.Value.ToString("G17") : "not available until a complete scored battery exists."));
             GUILayout.Label("Recent activity: " + dashboard.CompletedSessionCount + " completed session(s)" + (string.IsNullOrWhiteSpace(dashboard.LatestSessionDate) ? "." : ", latest " + dashboard.LatestSessionDate));
+            DrawAccuracyChart(feedback);
             DrawWarnings();
             GUILayout.Label("Test Modes");
             GUI.enabled = false;
@@ -166,6 +174,59 @@ namespace SensCalibr8.UI
                 showingSetup = true;
             }
             if (GUILayout.Button("Back to Slots")) showingDashboard = false;
+            if (GUILayout.Button("Open Comparison Page")) { comparisonSelection.Clear(); comparisonRows = Array.Empty<ProfileComparisonPresentation>(); showingDashboard = false; showingComparison = true; }
+        }
+
+        private void DrawComparison()
+        {
+            GUILayout.Label("Profile Comparison");
+            GUILayout.Label("Select at least two profiles explicitly. Only selected profiles are read; raw in-game sensitivity is never compared.");
+            foreach (ProfileSlotPresentation slot in slots)
+            {
+                bool selected = comparisonSelection.TryGetValue(slot.Id, out bool current) && current;
+                comparisonSelection[slot.Id] = GUILayout.Toggle(selected, slot.Name);
+            }
+            if (GUILayout.Button("Compare Selected Profiles"))
+            {
+                var ids = new List<long>();
+                foreach (KeyValuePair<long, bool> entry in comparisonSelection) if (entry.Value) ids.Add(entry.Key);
+                try { comparisonRows = application.CompareExplicitProfiles(ids); slotMessage = string.Empty; }
+                catch (Exception exception) { comparisonRows = Array.Empty<ProfileComparisonPresentation>(); slotMessage = exception.Message; }
+            }
+            if (comparisonRows.Count > 0)
+            {
+                GUILayout.Label("Profile | eDPI | Consistency utility | Reaction Time Tier | Performance Score");
+                foreach (ProfileComparisonPresentation row in comparisonRows)
+                {
+                    string metrics = row.HasComparableResult
+                        ? row.ProfileName + " | " + row.Edpi.Value.ToString("G17") + " | " + row.ConsistencyUtility.Value.ToString("G17") + " | " + row.ReactionTier + " | " + row.PerformanceScore.Value.ToString("G17")
+                        : row.ProfileName + " | no complete scored/graded battery available.";
+                    GUILayout.Label(metrics);
+                }
+                GUILayout.Label("Values are persisted outputs normalized through eDPI. This view is descriptive only and does not rank skill or infer causation.");
+            }
+            if (GUILayout.Button("Back to Slots")) { showingComparison = false; comparisonRows = Array.Empty<ProfileComparisonPresentation>(); }
+            if (!string.IsNullOrWhiteSpace(slotMessage)) GUILayout.Label(slotMessage);
+        }
+
+        private static void DrawAccuracyChart(ImmediateFeedbackPresentation feedback)
+        {
+            GUILayout.Label("Current Protocol Accuracy by Sensitivity");
+            if (feedback.AccuracyBars.Count == 0)
+            {
+                GUILayout.Label("No finalized post-adaptation shot evidence is available for the current protocol window.");
+                return;
+            }
+            GUILayout.Label("Mode: " + feedback.CurrentMode + " | Cycle: " + feedback.CurrentCycleId + " | Phase: " + feedback.CurrentPhase);
+            foreach (AccuracyBarPresentation bar in feedback.AccuracyBars)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Sensitivity " + bar.SensitivityValue.ToString("G17") + " | " + bar.AccuracyPercent.ToString("G17") + "% (" + bar.HitCount + "/" + bar.ResolvedCount + ")", GUILayout.Width(300f));
+                GUI.enabled = false;
+                GUILayout.HorizontalSlider((float)bar.FillFraction, 0f, 1f, GUILayout.Width(220f));
+                GUI.enabled = true;
+                GUILayout.EndHorizontal();
+            }
         }
 
         private void DrawWarnings()

@@ -23,11 +23,75 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 ## Current Execution State
 
-- Active phase: **Phase 5 — Protocol, Scoring, and Scientific Rigor (Completed)**
-- Last completed round: **P5-R8 — Full protocol regression**
-- Active round: **P5-R8 — Full protocol regression (Completed)**
-- Next planned round: **Phase 6 — Analysis, Reporting, Comparison, and Data Export**
-- Production scoring status: **Phase 1-3 calibration, scientific-rigor controls, continuous training, plateau evaluation, fresh recalibration lineage, and full end-to-end regression are complete**
+- Active phase: **Phase 6 — Analysis, Reporting, Comparison, and Data Export (Completed)**
+- Last completed round: **P6-R8 — Analysis/export verification**
+- Active round: **P6-R8 — Analysis/export verification (Completed)**
+- Next planned round: **P7-R1 — Golden-path end-to-end validation**
+- Production scoring status: **Phase 6 analysis/reporting/export/comparison exit gate passed; Phase 7 integration and release QA is next**
+
+### Phase 6 / P6-R8: Analysis/export verification
+
+- Analysis/report verification: added Python acceptance coverage for empty and partial inputs, persisted statistical ties, outlier diagnostics, fatigue flags, and unchanged persisted `eDPI 280` / `Performance Score 77` values. The report continues to render insufficient-data states instead of estimating evidence, never infers a Winner from a tie, keeps flagged-row-excluded outlier data diagnostic-only, and keeps fatigue informational.
+- Export verification: added Unity acceptance coverage that produces a profile-scoped manifest/CSV export and reads it back only through JSON/CSV parsers. The parsed profile identity, `eDPI 280`, Performance Score `77`, quoted text, null field, version, and Data Export disclaimer are unchanged. The public export Service/Writer expose no Import or Restore method.
+- Report layout coverage: the offline report fixture generated every embedded chart image and all ten chart sections; the automated test verifies the section identities, embedded `data:image/png` images, offline/no-HTTPS output, composition sections, and insufficient-data layout. The agent environment's browser policy blocks `file://` navigation, so a human visual screen pass remains explicitly scheduled for **P7-R5**, not silently claimed here.
+- Test results: Unity EditMode **223/223 passed**; Python reporting **18/18 passed**; calibration/analysis Python regression **74/74 passed**; Windows production build passed (`SensCalibr8.exe`, 667648 bytes); `git diff --check` passed.
+- Result: **P6-R8 complete; Phase 6 exit gate passed.** No Import/Restore capability and no Git operation were performed.
+
+### Phase 6 / P6-R7: Cross-profile Comparison Page
+
+- Explicit comparison boundary: added a read-only Comparison Page that requires the user to select at least two unique profile slots and press Compare. It never automatically enumerates or reads every profile, and no comparison action can mutate any profile, score, configuration, or evidence.
+- Persisted metrics only: each selected row reads the latest completed, four-mode, scored-and-graded battery for that exact profile. The table shows persisted eDPI, Consistency utility, Reaction Time tier, and Performance Score together with formula/configuration/date lineage. It never exposes raw sensitivity or recalculates a score.
+- Fail-closed presentation: a selected profile without a qualifying persisted result stays in the table but is explicitly marked unavailable. The UI states that the table is descriptive only and does not infer causality or rank player skill.
+- Test results: Unity EditMode **222/222 passed**, including explicit-selection forwarding, normalized persisted metric presentation, unavailable result handling, and fewer-than-two/duplicate/invalid selection rejection. Calibration/analysis Python regression **74/74 passed**; Windows production build passed (`SensCalibr8.exe`, 667648 bytes); `git diff --check` passed.
+- Result: **P6-R7 complete.** No Data Export mutation, Import/Restore capability, or Git operation was performed.
+
+### Phase 6 / P6-R6: Profile-separated Data Export
+
+- Export boundary: added immutable sc8-profile-data-export-v1. The C# repository reads only one selected profile and its owned/linked raw, derived, audit, configuration, protocol, scoring, scientific-rigor, and continuous-cycle records. It rejects any selected profile with unfinalized shot or Tracking adaptation evidence.
+- Portable output: the Service writes a new safe-name profile directory containing manifest.json plus one CSV per table. JSON/CSV are UTF-8 without a BOM; CSV schema-column order and ID-ordered rows are deterministic and values are invariant-formatted/quoted.
+- Safety and scope: export requires UTC time, refuses overwrite, and cleans only its own new incomplete directory after a failed write. Manifest and documentation state Data Export only — not Import/Restore, backup, or recovery. No Import/Restore code exists.
+- Test results: Unity EditMode **220/220 passed**, including new CSV escaping, UTF-8 manifest/disclaimer, profile-safe name, UTC validation, and overwrite-refusal tests.
+- Result: **P6-R6 complete.** No Comparison Page, Import/Restore capability, or Git operation was performed.
+
+### Phase 6 / P6-R5: HTML report composition
+
+- Versioned composition input: advanced the C# report input to sc8-html-report-input-v3. It carries persisted significance decisions, inclusive/flagged-excluded outlier aggregates, session fatigue evaluations, and recorded ergonomic warnings in addition to charts 1-10 source data and version lineage.
+- Standalone report: composed Winner/tie context, inclusive authoritative complete-battery results, diagnostic outlier sensitivity analysis, informational fatigue status, ergonomic-warning state, and scientific/scope notes before the chart section. HTML remains self-contained and offline.
+- Fail-closed presentation: no Phase 3 Winner is interpreted only as no persisted Winner; the renderer never guesses a tie or incomplete state. Every empty composition section renders an explicit insufficient-data statement. Outlier sensitivity values remain parallel diagnostics, fatigue remains informational, and warnings remain non-diagnostic/non-blocking.
+- Test results: Python analysis package **16/16 passed**; Unity EditMode regression **218/218 passed**.
+- Result: **P6-R5 complete.** No Data Export, Comparison Page, import/restore capability, or Git operation was performed.
+
+### Phase 6 / P6-R4: HTML report charts 6-10
+
+- Versioned input: advanced the C# report input to sc8-html-report-input-v2. It exposes persisted Grade, post-adaptation raw primary-time observations, nullable raw Submovement Count, C#-projected eDPI for shot evidence, and Phase 3 Winner eDPI lineage for cross-profile reporting. Python remains a read-only renderer.
+- Offline HTML charts: added Reaction Time Distribution by Database Session, Performance Grade Timeline, Reaction Time vs Sensitivity Scatter Plot, Submovement Count vs eDPI Curve, and Profile Comparison Chart. All five use stored evidence only and present explicit insufficient-data panels when their required rows are unavailable.
+- Raw-data safeguards: Far Flick rows with null movement onset are omitted from reaction charts instead of using the scoring fallback; Chart 9 uses only non-null persisted Submovement Count and never converts miss/null evidence to zero; Grade, eDPI, and Winner values are already persisted/projected by C# and are not recomputed in Python. Chart 10 needs two profiles with a Phase 3 Winner and makes no causal or skill-ranking claim.
+- Test results: Python analysis package **15/15 passed**; calibration analysis regression **74/74 passed**; Unity EditMode regression **218/218 passed**.
+- Result: **P6-R4 complete.** The ten chart generators are complete. No report composition, Data Export, Comparison Page, or Git operation was performed.
+
+### Phase 6 / P6-R3: HTML report charts 1-5
+
+- Report boundary: added immutable sc8-html-report-input-v1 C# Data/Service input. It is profile-scoped, carries persisted score/formula/configuration lineage, and rejects any profile with unfinalized shot or Tracking adaptation evidence before serializing JSON for analysis.
+- Offline HTML charts: added a Python-only generator for Sensitivity vs Performance Score, Overflick vs Underflick, Movement vs Stationary Error, Progressive Narrowing Timeline, and Consistency Trend Over Time. Each chart is created from persisted post-adaptation evidence and reports insufficient data rather than estimating missing results. The self-contained HTML embeds chart PNGs and performs no network access.
+- Direction and units: Overflick/Underflick presentation derives intended horizontal direction only from a non-zero stored target-center azimuth; neutral/unknown directions are omitted while the stored raw signed error remains unchanged. Movement/stationary and consistency charts retain angular-error degrees. Performance Score, Grade, eDPI, and Winners are read from persisted authoritative results rather than recomputed.
+- Test results: Python analysis package **15/15 passed**; calibration analysis regression **74/74 passed**; Unity EditMode regression **218/218 passed**.
+- Result: **P6-R3 complete.** No Data Export, cross-profile comparison, HTML charts 6-10, or Git operation was performed.
+
+### Phase 6 / P6-R2: Immediate Unity feedback
+
+- Dashboard data: added a Data/Service-only immediate-feedback boundary. It reads the persisted unique Phase 3 Winner sensitivity, latest authoritative complete-battery Performance Score, and current shot-mode protocol window without allowing UI code to derive score, eDPI, Grade, or Accuracy.
+- Current-protocol chart: because one Database Session contains only one mode and one sensitivity, the chart uses the latest shot-mode cycle/phase window and groups its finalized post-adaptation shots by sensitivity. It displays service-provided percentage/fill values only. Statistical outliers remain included; incomplete batteries cannot qualify as the latest authoritative score; Tracking is intentionally not represented as Accuracy because its mode-specific counterpart is Time-on-Target.
+- Fail-closed behavior: any null shot adaptation status rejects immediate feedback rather than fabricating a chart.
+- Test results: Unity EditMode **218/218 passed**, including 100%/50% multi-sensitivity bars, post-adaptation-only counting, context lineage, persisted Best/score Dashboard presentation, and unfinalized-evidence rejection.
+- Result: **P6-R2 complete.** No HTML report, Python chart generation, Data Export, Comparison Page, or Git operation was performed.
+
+### Phase 6 / P6-R1: Analysis data contracts
+
+- Read-only boundary: added immutable sc8-analysis-dataset-v1, produced only by the C# Data/Service layer. It is profile-scoped and carries explicit units plus persisted formula/configuration lineage. Python now has a validation-only reader for this JSON shape; it neither opens production SQLite nor recalculates authoritative scores.
+- Evidence rules: authoritative score records require a completed four-mode battery. Incomplete batteries remain visible only as sessions marked isCompleteBattery=false; their score rows cannot enter the authoritative dataset. Any raw shot/Tracking evidence with a null adaptation status rejects the profile dataset until capture finalization is complete.
+- Scientific-rigor visibility: outlier analysis exposes inclusive and flagged-row-excluded aggregates side by side without replacing the authoritative result.
+- Test results: Unity EditMode **215/215 passed**, including profile isolation, source-score parity at 77.0, version/units/lineage, complete/incomplete battery separation, outlier aggregates, unfinalized-adaptation rejection, and JSON serialization. Python calibration/analysis suite **74/74 passed**; git diff --check passed.
+- Result: **P6-R1 complete.** No chart, HTML report, file-export, Comparison Page, or Git operation was performed.
 
 ### Phase 5 / P5-R8: Full protocol regression
 

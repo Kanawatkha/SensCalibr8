@@ -4,6 +4,7 @@ using SensCalibr8.Core.Configuration;
 using SensCalibr8.Core.Domain;
 using SensCalibr8.Data.Repositories;
 using SensCalibr8.Services.Calculations;
+using SensCalibr8.Services.Analysis;
 using SensCalibr8.Services.Validation;
 
 namespace SensCalibr8.Services.Profiles
@@ -46,6 +47,7 @@ namespace SensCalibr8.Services.Profiles
         private readonly SensitivityCalculationService calculations;
         private readonly ErgonomicWarningService ergonomicWarnings;
         private readonly ProfileDashboardService dashboard;
+        private readonly CrossProfileComparisonService comparison;
 
         public ProfileSetupApplicationService(ProfileLifecycleService lifecycle, SensitivityCalculationService calculations)
             : this(lifecycle, calculations, null) { }
@@ -54,11 +56,15 @@ namespace SensCalibr8.Services.Profiles
             : this(lifecycle, calculations, ergonomicWarnings, null) { }
 
         public ProfileSetupApplicationService(ProfileLifecycleService lifecycle, SensitivityCalculationService calculations, ErgonomicWarningService ergonomicWarnings, ProfileDashboardService dashboard)
+            : this(lifecycle, calculations, ergonomicWarnings, dashboard, null) { }
+
+        public ProfileSetupApplicationService(ProfileLifecycleService lifecycle, SensitivityCalculationService calculations, ErgonomicWarningService ergonomicWarnings, ProfileDashboardService dashboard, CrossProfileComparisonService comparison)
         {
             this.lifecycle = lifecycle ?? throw new ArgumentNullException(nameof(lifecycle));
             this.calculations = calculations ?? throw new ArgumentNullException(nameof(calculations));
             this.ergonomicWarnings = ergonomicWarnings;
             this.dashboard = dashboard;
+            this.comparison = comparison;
         }
 
         public IReadOnlyList<ProfileSlotPresentation> ListSlots()
@@ -108,6 +114,12 @@ namespace SensCalibr8.Services.Profiles
             if (dashboard == null) throw new InvalidOperationException("Profile dashboard service is unavailable.");
             ProfileRecord profile = lifecycle.GetActive();
             return profile == null ? null : dashboard.Load(Present(profile));
+        }
+
+        public IReadOnlyList<ProfileComparisonPresentation> CompareExplicitProfiles(IReadOnlyList<long> profileIds)
+        {
+            if (comparison == null) throw new InvalidOperationException("Cross-profile comparison service is unavailable.");
+            return comparison.LoadExplicit(profileIds);
         }
 
         public PhysicalRulerDpiPreview PreviewPhysicalRuler(string counts, string distanceCm)
