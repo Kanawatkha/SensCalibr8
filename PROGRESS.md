@@ -23,11 +23,68 @@ This file starts empty of phase content. The coding agent is responsible for ana
 
 ## Current Execution State
 
-- Active phase: **Phase 6 — Analysis, Reporting, Comparison, and Data Export (Completed)**
-- Last completed round: **P6-R8 — Analysis/export verification**
-- Active round: **P6-R8 — Analysis/export verification (Completed)**
-- Next planned round: **P7-R1 — Golden-path end-to-end validation**
-- Production scoring status: **Phase 6 analysis/reporting/export/comparison exit gate passed; Phase 7 integration and release QA is next**
+> Effective state update (2026-07-19): P7-R6 automated release QA is complete. P7-R7 final operator handoff is active and pending target-machine execution; `SensCalibr8-Windows-x86_64-v8` is the current release candidate.
+
+- Active phase: **Phase 7 — Integration and Release QA (In Progress)**
+- Last completed round: **P7-R5 — UX, visual, and scope compliance**
+- Active round: **P7-R5 — UX, visual, and scope compliance (Completed)**
+- Next planned round: **P7-R6 — Release packaging and clean-machine smoke**
+- Production scoring status: **P7-R1 through P7-R5 passed; release packaging, clean-machine smoke, and final evidence gates remain**
+
+### Phase 7 / P7-R6: Release packaging and clean-machine smoke
+
+- Release packaging: added `Package-Production.ps1`, `Smoke-Test-Release.ps1`, [RELEASE_OPERATOR_GUIDE.md](docs/RELEASE_OPERATOR_GUIDE.md), [RELEASE_DEPENDENCY_LICENSES.md](docs/RELEASE_DEPENDENCY_LICENSES.md), and [P7_R6_RELEASE_PACKAGING_CLEAN_MACHINE.md](docs/P7_R6_RELEASE_PACKAGING_CLEAN_MACHINE.md). The package is offline, profile-data local, Import/Restore-free, and contains only the executable/Data directory, runtime config, eight frozen calibration contract/evidence files, and release documentation.
+- Integrity boundary: `RELEASE_MANIFEST.json` records each packaged file with size and SHA-256. The smoke runner verifies every checksum before launching and uses an isolated temporary `userDataPath`.
+- Runtime correction: clean smoke exposed the UI's legacy Input API call under the project's Input System configuration. The UI assembly now declares `Unity.InputSystem` and uses `Keyboard.current` for F11; the corrected build passed.
+- Test results: Unity EditMode **234/234 passed**; Python reporting **18/18 passed**; calibration/analysis regression **74/74 passed**; Windows production build passed (`SensCalibr8.exe`, 667,648 bytes); release package **182 files**; manifest checksum verification passed; clean-machine smoke passed; no orphan `SensCalibr8`/`UnityCrashHandler64` process remained.
+- Result: **P7-R6 complete and Phase 7 automated exit gate passed.** Pixel-level visual review and protocol acceptance on the target machine remain operator handoff activities. No Git operation was performed.
+
+### Phase 7 / P7-R7: Final operator release handoff
+
+- Handoff material: added [FINAL_OPERATOR_RELEASE_HANDOFF.md](docs/FINAL_OPERATOR_RELEASE_HANDOFF.md) and linked it from the release operator guide. The checklist separates checksum/startup evidence already produced automatically from target-machine visual, setup, session, persistence, and profile-scoped Data Export verification that must be observed by a person.
+- Scope boundary: the checklist reconfirms offline operation, no Valorant/Vanguard interaction, manual DPI entry, sensitivity-only scope, fixed crosshair style/size, and Data Export-only behavior.
+- Release candidate: rebuilt the final handoff package as `SensCalibr8-Windows-x86_64-v8` with 184 manifest-tracked files, including the P7-R6 evidence and the final operator checklist. Checksum verification and clean-machine smoke both passed for v8.
+- Status: **Pending operator execution.** This is not an implementation or automated-test blocker; it is the final release decision boundary. No Git operation was performed.
+
+### Phase 7 / P7-R5: UX, visual, and scope compliance
+
+- UX/display: added [P7_R5_UX_VISUAL_SCOPE_COMPLIANCE.md](docs/P7_R5_UX_VISUAL_SCOPE_COMPLIANCE.md), corrected standalone defaults to the documented 960×540 resizable windowed menu, and added `WindowDisplayPolicy` with F11 menu toggle plus test-fullscreen restoration boundary.
+- Visual contract: acceptance verifies frozen arena geometry, cyan targets, approved crosshair palette, fixed dot/size, minimal HUD, inline warnings, and explicit profile-selection comparison boundaries. Existing arena/mode tests remain green.
+- Scope/offline audit: acceptance scans production source for network APIs/URLs and checks the public Data Export surface for Import/Restore methods; no forbidden surface was found. ADS test mode, grip/role causal scoring, decorative scope, and unrelated settings remain absent.
+- Evidence boundary: automated checks validate contracts and source surfaces; pixel-level human review of the final standalone build remains an operator release check and is not falsely claimed as automated evidence.
+- Test results: Unity EditMode **234/234 passed** with 0 skipped/inconclusive; Python report suite **18/18 passed**; calibration/analysis regression **74/74 passed**; Windows production build passed (`SensCalibr8.exe`, 667,648 bytes).
+- Result: **P7-R5 complete.** Pixel-level human visual review remains an operator release check as documented. No Git operation was performed.
+
+### Phase 7 / P7-R4: Migration and historical compatibility
+
+- Upgrade coverage: added [P7_R4_MIGRATION_HISTORICAL_COMPATIBILITY.md](docs/P7_R4_MIGRATION_HISTORICAL_COMPATIBILITY.md) and acceptance coverage that constructs every supported schema starting state (empty plus versions 1-8) using the exact catalog SQL/metadata, then upgrades through the production bootstrapper. Every state reaches the current catalog, preserves migration history, stores the immutable accepted configuration, and passes SQLite integrity/foreign-key checks.
+- Fail-closed migration state: `SqliteMigrationRunner` now rejects unsupported applied versions, `PRAGMA user_version`/metadata disagreement, and gaps in migration history before applying pending work. Rejection fixtures confirm that existing profiles remain present; no metadata cleanup, implicit rewrite, or data deletion occurs.
+- Historical compatibility: Analysis dataset, HTML report input, and profile-separated Data Export each preserve stored formula/configuration lineage for a historical scored battery. The existing full cascade/schema regression remains green.
+- Test results: Unity EditMode **230/230 passed** with 0 skipped/inconclusive; Python report suite **18/18 passed**; calibration/analysis regression **74/74 passed**; Windows production build passed (`SensCalibr8.exe`, 667,648 bytes).
+- Result: **P7-R4 complete.** No Git operation was performed.
+
+### Phase 7 / P7-R3: Reproducibility, timing, and performance
+
+- Reproducibility: added [P7_R3_REPRODUCIBILITY_TIMING_PERFORMANCE.md](docs/P7_R3_REPRODUCIBILITY_TIMING_PERFORMANCE.md) and two EditMode acceptance checks. Fresh target sequencers produce the same SHA-256 seed audit and full condition signature for every mode under the same frozen seed context; timing and frame policies are read from `calibration_config_v1`.
+- Raw-data and persistence baseline: the acceptance fixture uses the frozen `ShotTrials` contract, persists 30 shots and 30 raw mouse samples through the real transaction boundary, confirms raw deltas survive unchanged, and reads the same session through the analysis service. Observed on 2026-07-19: SQLite 380,928 bytes, persistence 8.017 ms, analysis read 1.990 ms. These are diagnostic baselines, not new thresholds.
+- Test results: Unity EditMode **226/226 passed** with 0 skipped/inconclusive; Python report suite **18/18 passed**; calibration/analysis regression **74/74 passed**; Windows production build passed (`SensCalibr8.exe`, 667,648 bytes).
+- Result: **P7-R3 complete.** No Git operation was performed.
+
+### Phase 7 / P7-R2: Edge and failure matrix
+
+- Matrix coverage: consolidated the validation and failure cases already enforced across P1-P6 into [P7_R2_EDGE_FAILURE_MATRIX.md](docs/P7_R2_EDGE_FAILURE_MATRIX.md). The matrix maps each rule to its concrete Unity or Python test fixture and records whether the system rejects, rolls back, flags, or fails closed.
+- No production shortcut: this round required no production behavior change; the existing implementation and phase-specific tests already cover the requested failure classes. The matrix is now the audit index for the full suite.
+- Test results: Unity EditMode **224/224 passed** with 0 skipped/inconclusive; Python report suite **18/18 passed**; calibration/analysis regression **74/74 passed**.
+- Result: **P7-R2 complete.** No Git operation was performed.
+
+### Phase 7 / P7-R1: Golden-path end-to-end validation
+
+- Clean-database journey: added one acceptance fixture that creates a profile through the Setup application boundary, verifies DPI 1600 → PSA sensitivity 0.175, creates the seven Phase 1 candidates, persists the accepted significance decision, runs the real Phase 2 and Phase 3 narrowing workflows, and persists unique Winners without mutating `profiles.current_sensitivity`.
+- Continuous cycle: the fixture persists a complete training battery plus the fifth training session and finalizes the checkpoint through the real `ContinuousCycleService`. The checkpoint remains linked to the Phase 3 Winner lineage.
+- Analysis handoff: the same database is read by the versioned Analysis dataset and HTML report-input repositories. It preserves all complete scored batteries, Phase 3 Winner eDPI 294, formula/configuration lineage, and cycle/battery/session relationships.
+- Comparison/export handoff: the fixture explicitly compares the completed primary profile with an isolated secondary profile (primary available, secondary unavailable) and exports the primary profile through the real JSON/CSV Data Export service. The secondary profile has no candidates or scores.
+- Test results: Unity EditMode **224/224 passed**; Python report suite **18/18 passed**; calibration/analysis regression **74/74 passed**; Windows production build passed (`SensCalibr8.exe`, 667648 bytes); `git diff --check` passed.
+- Result: **P7-R1 complete.** No Git operation was performed.
 
 ### Phase 6 / P6-R8: Analysis/export verification
 

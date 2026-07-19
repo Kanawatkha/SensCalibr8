@@ -3,7 +3,8 @@
   "rootNamespace": "SensCalibr8.UI",
   "references": [
     "SensCalibr8.Core",
-    "SensCalibr8.Services"
+    "SensCalibr8.Services",
+    "Unity.InputSystem"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

@@ -6,6 +6,7 @@ using SensCalibr8.Core.Domain;
 using SensCalibr8.Services.Profiles;
 using SensCalibr8.Services.Analysis;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SensCalibr8.UI
 {
@@ -27,6 +28,7 @@ namespace SensCalibr8.UI
         private bool showingSetup;
         private bool showingDashboard;
         private bool showingComparison;
+        private readonly WindowDisplayPolicy displayPolicy = new WindowDisplayPolicy();
         private readonly Dictionary<long, bool> comparisonSelection = new Dictionary<long, bool>();
         private IReadOnlyList<ProfileComparisonPresentation> comparisonRows = Array.Empty<ProfileComparisonPresentation>();
 
@@ -41,6 +43,7 @@ namespace SensCalibr8.UI
         {
             try
             {
+                displayPolicy.ApplyMenuWindow();
                 supportedCrosshairColors = CopySupportedCrosshairColors();
                 string repositoryRoot = FindRepositoryRoot(Application.dataPath);
                 string databasePath = Path.Combine(Application.persistentDataPath, "senscalibr8.sqlite3");
@@ -49,6 +52,12 @@ namespace SensCalibr8.UI
                 slots = application.ListSlots();
             }
             catch (Exception exception) { startupError = exception.Message; }
+        }
+
+        private void Update()
+        {
+            if (Keyboard.current != null && Keyboard.current.f11Key.wasPressedThisFrame)
+                displayPolicy.ToggleMenuFullscreen();
         }
 
         private void OnGUI()
